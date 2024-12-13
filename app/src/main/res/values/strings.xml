@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">QuickDeal</string>
+    <string name="app_name">Быстрое дело</string>
+<!--    <string name="app_name">QuickDeal</string>-->
+
 </resources>
