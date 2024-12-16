@@ -42,9 +42,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
 
-        buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"$username\"")
-        buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"$password\"")
-
 //        buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"${System.getenv("ACTIVE_DIRECTORY_USERNAME") ?: ""}\"")
 //        buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"${System.getenv("ACTIVE_DIRECTORY_PASSWORD") ?: ""}\"")
 
@@ -62,17 +59,26 @@ android {
         getByName("debug") {
             versionNameSuffix = "-DEBUG"
             signingConfig = signingConfigs.getByName("config")
+
+
+
+            buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"$username\"")
+            buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"$password\"")
         }
 
         getByName("release") {
             versionNameSuffix = ".release"
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("config")
+
+
+            buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"\"")
+            buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"\"")
         }
     }
 

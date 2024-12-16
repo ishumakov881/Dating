@@ -2,6 +2,7 @@ package com.lds.quickdeal.repository
 
 import android.content.Context
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const
@@ -25,7 +26,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
-import io.ktor.utils.io.streams.asInput
 import javax.inject.Inject
 
 class TaskRepository @Inject constructor(
@@ -150,18 +150,38 @@ class TaskRepository @Inject constructor(
 //
 //        println("@@@@@"+ (fileBytes?.size ?: ";;;"))
 
+
+        //Нужно повторить чтото типа но с моими файлами
+        //curl -X POST "http://10.0.20.179:90/megaplan/upload" -H "Accept: application/json" -H "Content-Type: multipart/form-data" -F "files=@C:\Users\reznichenko.i\Desktop\1.txt" -F "files=@C:\Users\reznichenko.i\Desktop\1.txt" -F "files=@C:\Users\reznichenko.i\Desktop\1.txt"
+
+
+        val FILE_KEY = "files"
+
         val response: HttpResponse = client.post("${Const.API_URL}${Const.API_UPLOAD}") {
             setBody(
                 MultiPartFormDataContent(
                     formData {
-                        append(
-                            key = "json",
-                            value = kotlinx.serialization.json.Json.encodeToString(TaskRequest.serializer(),taskRequest),
-                            headers = Headers.build {
-                                append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                            }
-                        )
+//                        append(
+//                            key = "json",
+//                            value = kotlinx.serialization.json.Json.encodeToString(TaskRequest.serializer(),taskRequest),
+//                            headers = Headers.build {
+//                                append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+//                            }
+//                        )
 
+//                        append("json", kotlinx.serialization.json.Json.encodeToString(TaskRequest.serializer(),taskRequest), Headers.build {
+//                            append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+//                            //append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+//                        })
+
+
+                        append("name", taskRequest.name)
+                        append("subject", taskRequest.subject)
+                        append("contentType", "Task")
+                        append("isTemplate", "false")
+                        append("isUrgent", "false")
+                        append("responsibleContentType", "Employee")
+                        taskRequest.responsible?.let { append("responsibleId", it.id) }
 
 //                        ///
 //                        selectedFiles?.forEach { file ->
@@ -171,11 +191,11 @@ class TaskRepository @Inject constructor(
 //                            // Создаем новый поток при каждом вызове appendInput
 //                            context.contentResolver.openInputStream(Uri.parse(uri))?.use { inputStream ->
 //                                appendInput(
-//                                    key = "files[]", // Ключ массива файлов
+//                                    key = "$FILE_KEY", // Ключ массива файлов
 //                                    headers = Headers.build {
 //                                        append(
 //                                            HttpHeaders.ContentDisposition,
-//                                            "form-data; name=\"files[]\"; filename=\"$fileName\""
+//                                            "filename=\"$fileName\""
 //                                        )
 //                                    },
 //                                    size = inputStream.available().toLong() // Размер файла в Long
@@ -194,9 +214,9 @@ class TaskRepository @Inject constructor(
 //                            val fileName = file.path.substringAfterLast('/') // Имя файла
 //                            context.contentResolver.openInputStream(Uri.parse(uri))?.use { inputStream ->
 //                                appendInput(
-//                                    key = "files[]",
+//                                    key = "$FILE_KEY",
 //                                    headers = Headers.build {
-//                                        append(HttpHeaders.ContentDisposition,  "form-data; name=\"files[]\"; filename=\"$fileName\"")
+//                                        append(HttpHeaders.ContentDisposition,  "filename=\"$fileName\"")
 //                                    }
 //                                    //, size = file.length()
 //                                ) {
@@ -210,7 +230,7 @@ class TaskRepository @Inject constructor(
                         selectedFiles?.forEach { file ->
                             val rawUri = file.platformFile.toString()
                             val uri = Uri.parse(rawUri)
-                            val fileName = UriUtils.getFileName(context, uri)
+                            val fileName = UriUtils.getFileName(context, uri) ?: "unknown_file"
 
                             val inputStream = context.contentResolver.openInputStream(uri)
                                 ?: throw Exception("Не удалось открыть файл: $uri")
@@ -222,19 +242,23 @@ class TaskRepository @Inject constructor(
                                 println("FileName: $fileName")
                                 //println("FileName: $inputStream")
 
+                                append(FILE_KEY, inputStream.readBytes(), Headers.build {
+                                    append(HttpHeaders.ContentType, getMimeType(fileName))
+                                    append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                                })
 
-                                appendInput(
-                                    key = "files[]", // Ключ массива файлов
-                                    headers = Headers.build {
-                                        append(
-                                            HttpHeaders.ContentDisposition,
-                                            "form-data; name=\"files[]\"; filename=\"$fileName\""
-                                        )
-                                    }
-                                    //size = null // Размер файла не указываем
-                                ) {
-                                    inputStream.asInput() // Передаем поток напрямую
-                                }
+//                                append(
+//                                    key = FILE_KEY, // Ключ массива файлов
+//                                    headers = Headers.build {
+//                                        append(
+//                                            HttpHeaders.ContentDisposition,
+//                                            "filename=\"$fileName\""
+//                                        )
+//                                    }
+//                                    //size = null // Размер файла не указываем
+//                                ) {
+//                                    inputStream.asInput() // Передаем поток напрямую
+//                                }
                             } finally {
                                 // Закрываем поток вручную
                                 //inputStream.close()
@@ -245,7 +269,7 @@ class TaskRepository @Inject constructor(
 
                         if (photoUri != null && photoUri != Uri.EMPTY) {
 
-                            val fileName = UriUtils.getFileName(context, photoUri)
+                            val fileName = UriUtils.getFileName(context, photoUri) ?: "unknown_file"
 
                             val inputStream = context.contentResolver.openInputStream(photoUri)
                                 ?: throw Exception("Не удалось открыть фото: $photoUri")
@@ -254,19 +278,22 @@ class TaskRepository @Inject constructor(
                                 println("FileName - Photo: $fileName")
                                 //println("FileName: $inputStream")
 
-
-                                appendInput(
-                                    key = "files[]", // Ключ массива файлов
-                                    headers = Headers.build {
-                                        append(
-                                            HttpHeaders.ContentDisposition,
-                                            "form-data; name=\"files[]\"; filename=\"$fileName\""
-                                        )
-                                    }
-                                    //size = null // Размер файла не указываем
-                                ) {
-                                    inputStream.asInput() // Передаем поток напрямую
-                                }
+                                append(FILE_KEY, inputStream.readBytes(), Headers.build {
+                                    append(HttpHeaders.ContentType, getMimeType(fileName))
+                                    append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                                })
+//                                append(
+//                                    key = FILE_KEY, // Ключ массива файлов
+//                                    headers = Headers.build {
+//                                        append(
+//                                            HttpHeaders.ContentDisposition,
+//                                            "filename=\"$fileName\""
+//                                        )
+//                                    }
+//                                    //size = null // Размер файла не указываем
+//                                ) {
+//                                    inputStream.asInput() // Передаем поток напрямую
+//                                }
                             } finally {
                                 // Закрываем поток вручную
                                 //inputStream.close()
@@ -274,9 +301,10 @@ class TaskRepository @Inject constructor(
                         }
 
                         ////
-                         if (shareVideo != null && shareVideo != Uri.EMPTY) {
+                        if (shareVideo != null && shareVideo != Uri.EMPTY) {
 
-                            val videoFileName = UriUtils.getFileName(context, shareVideo)
+                            val videoFileName =
+                                UriUtils.getFileName(context, shareVideo) ?: "unknown_file.mp4"
 
                             val inputStream = context.contentResolver.openInputStream(shareVideo)
                                 ?: throw Exception("Не удалось открыть фото: $shareVideo")
@@ -284,19 +312,25 @@ class TaskRepository @Inject constructor(
                             try {
                                 println("FileName - Photo: $videoFileName")
                                 //println("FileName: $inputStream")
-
-                                appendInput(
-                                    key = "files[]", // Ключ массива файлов
-                                    headers = Headers.build {
-                                        append(
-                                            HttpHeaders.ContentDisposition,
-                                            "form-data; name=\"files[]\"; filename=\"$videoFileName\""
-                                        )
-                                    }
-                                    //size = null // Размер файла не указываем
-                                ) {
-                                    inputStream.asInput() // Передаем поток напрямую
-                                }
+                                append(FILE_KEY, inputStream.readBytes(), Headers.build {
+                                    append(HttpHeaders.ContentType, getMimeType(videoFileName))
+                                    append(
+                                        HttpHeaders.ContentDisposition,
+                                        "filename=\"$videoFileName\""
+                                    )
+                                })
+//                                append(
+//                                    key = FILE_KEY,
+//                                    headers = Headers.build {
+//                                        append(
+//                                            HttpHeaders.ContentDisposition,
+//                                            "filename=\"$videoFileName\""
+//                                        )
+//                                    }
+//                                    //size = null // Размер файла не указываем
+//                                ) {
+//                                    inputStream.asInput() // Передаем поток напрямую
+//                                }
                             } finally {
                                 // Закрываем поток вручную
                                 //inputStream.close()
@@ -309,6 +343,37 @@ class TaskRepository @Inject constructor(
                 )
             )
         }
+
+
+//        val response: HttpResponse = client.submitFormWithBinaryData(
+//            url = "http://10.0.20.179:90/megaplan/upload",
+//            formData = formData {
+//                selectedFiles?.forEach { file ->
+//                    val raw = file.platformFile.toString() // URI файла
+//                    val uri = Uri.parse(raw)
+//                    val fileName = UriUtils.getFileName(context, uri)
+//
+//                    println(fileName)
+//
+//                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+//                        append(
+//                            FILE_KEY,
+//                            inputStream.asInput(),
+//                            Headers.build {
+//                                append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+//                            }
+//                        )
+//                    } ?: throw Exception("Не удалось открыть файл: $uri")
+//                }
+//            }
+//        ) {
+//            // Добавляем необходимые заголовки
+//            header(HttpHeaders.Accept, "application/json")
+//        }
+//
+//        // Читаем ответ
+//        println("Response status: ${response.status}")
+//        println("Response body: ${response.body<String>()}")
 
 
 //        var formData = formData {
@@ -324,7 +389,7 @@ class TaskRepository @Inject constructor(
 //
 //                if (fileBytes.isNotEmpty()) {
 ////                    append(
-////                        key = "files",
+////                        key = FILE_KEY,
 ////                        value = fileBytes,
 ////                        headers = Headers.build {
 ////                            append(
@@ -365,11 +430,12 @@ class TaskRepository @Inject constructor(
         return if (response.status.isSuccess()) {
             // Если статус успешный (200-299), десериализуем как AuthResponse
             try {
-                val authResponse: TaskResponse = response.body()
-                if (authResponse.meta.status == 200) {
-                    Result.success(authResponse)
+                println("@@@@@@@==>" + response.toString())
+                val taskResponse: TaskResponse = response.body()
+                if (taskResponse.meta.status == 200) {
+                    Result.success(taskResponse)
                 } else {
-                    Result.success(authResponse)
+                    Result.success(taskResponse)
                 }
             } catch (e: Exception) {
                 Result.failure(e)
@@ -377,12 +443,13 @@ class TaskRepository @Inject constructor(
         } else {
             // Если статус неуспешный, обрабатываем как ошибку
             try {
-                println("@@@@@@@" + response.body())
+
                 val errorResponse: TaskErrorResponse = response.body()
-                var msg = errorResponse.meta.errors.get(0).message
+                //var msg = errorResponse.meta.errors.get(0).message
+                var msg = errorResponse.message
 
                 if (BuildConfig.DEBUG) {
-                    msg = errorResponse.toString()
+                    println(errorResponse.toString())
                 }
 
                 Result.failure(Exception(msg))
@@ -392,4 +459,9 @@ class TaskRepository @Inject constructor(
         }
     }
 
+    fun getMimeType(fileName: String): String {
+        val extension = fileName.substringAfterLast('.', "")
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            ?: "application/octet-stream"
+    }
 }

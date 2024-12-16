@@ -18,6 +18,9 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.request
 import io.ktor.serialization.gson.gson
+import okhttp3.OkHttpClient
+import java.net.InetSocketAddress
+import java.net.Proxy
 import javax.inject.Singleton
 
 @Module
@@ -32,23 +35,46 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHttpClient(): HttpClient {
+
+        val proxy = Proxy(Proxy.Type.HTTP, InetSocketAddress("10.0.20.167", 8888))
+
+        val okHttpClient = OkHttpClient.Builder()
+            //.proxy(proxy)
+            .build()
+
         return HttpClient(OkHttp) {
+//            install(ContentNegotiation) {
+//                gson()
+//            }
+//            install(Logging) {
+//                logger = Logger.DEFAULT
+//                level = LogLevel.HEADERS
+////                filter { request ->
+////
+////                    println(request.body.toString())
+////                    request.url.host.contains("ktor.io")
+////                }
+//            }
+//
+//
+////            install(HttpTimeout) {
+////                requestTimeoutMillis = 1000_00
+////            }
+//            //install(Logging)
+
+            engine {
+                this.preconfigured = okHttpClient
+            }
             install(ContentNegotiation) {
                 gson()
             }
             install(Logging) {
                 logger = Logger.DEFAULT
                 level = LogLevel.HEADERS
-//                filter { request ->
-//
-//                    println(request.body.toString())
-//                    request.url.host.contains("ktor.io")
-//                }
             }
-//            install(HttpTimeout) {
-//                requestTimeoutMillis = 1000_00
-//            }
-            //install(Logging)
+            install(HttpTimeout) {
+                requestTimeoutMillis = 1000_00
+            }
         }
     }
 

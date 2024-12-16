@@ -14,6 +14,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,9 +31,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
@@ -56,9 +68,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -74,6 +88,7 @@ import com.lds.quickdeal.android.utils.AttachFileType
 import com.lds.quickdeal.android.utils.PermissionResolver
 import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Owner
+import com.lds.quickdeal.ui.LoadingAnimation
 
 import com.lds.quickdeal.ui.viewmodels.TaskViewModel
 import kotlinx.io.IOException
@@ -94,6 +109,9 @@ var tmpVal: Uri? = Uri.EMPTY
 @ExperimentalMaterial3Api
 @Composable
 fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hiltViewModel()) {
+
+
+    var isLoading by remember { mutableStateOf(false) }
 
     var shareVideo by remember { mutableStateOf<Uri?>(null) }
     //var shareFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -367,13 +385,19 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
             // Пример: Если shareVideo не пустое, отображаем поле
             shareVideo?.let {
                 UriUtils.getFileName(context, it)?.let { it1 ->
-                    TextField(
-                        value = it1,
-                        onValueChange = {},
-                        label = { Text("Share Video URI") },
-                        readOnly = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+//                    TextField(
+//                        value = it1,
+//                        onValueChange = {},
+//                        label = { Text("Share Video URI") },
+//                        readOnly = true,
+//                        modifier = Modifier.fillMaxWidth()
+//                    )
+
+
+                    val fileName = UriUtils.getFileName(context, it).toString()
+                    MakeDropdownMenu(fileName, AttachFileType.VIDEO) {
+                        shareVideo = null
+                    }
                 }
             }
 
@@ -462,7 +486,12 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
                 }
             }
         }
-
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Показываем анимацию загрузки, если `isLoading` true
+            if (isLoading) {
+                LoadingAnimation()
+            }
+        }
         //AddFileButton()
         AddFileOrCaptureButton(
             { newFiles ->
@@ -484,6 +513,9 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 
         Button(
             onClick = {
+
+                isLoading = true
+
                 taskViewModel.createTask(topic,
                     description,
                     selectedFilesUris,
@@ -494,7 +526,7 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
                         id = selectedResponsible.id
                     ),
                     { taskResponse ->
-
+                        isLoading = false
                         if (taskResponse.meta.status == 200) {
                             Toast.makeText(context, "ЗАДАЧА ДОБАВЛЕНА!", Toast.LENGTH_LONG).show()
                         } else {
@@ -519,7 +551,7 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                            Toast.LENGTH_LONG
 //                        ).show()
 //                    }
-
+                        isLoading = false
                         println("$err")
                         Toast.makeText(
                             context,
@@ -537,6 +569,12 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
     }
 
 
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewLoadingAnimation() {
+    LoadingAnimation()
 }
 
 @Composable
@@ -714,7 +752,7 @@ fun AddFileOrCaptureButton(
 //        }
 //    }
 
-    val icon = painterResource(id = R.drawable.file_upload)
+    //val icon = painterResource(id = R.drawable.file_upload)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -728,7 +766,7 @@ fun AddFileOrCaptureButton(
 //        }
 //
 //        ) {
-//            Icon(imageVector = Icons.Filled.UploadFile, "Выбрать файл")
+//            Icon(imageVector = Icons.Filled.UploadFile, "Файлы")
 //        }
 
 
@@ -740,12 +778,12 @@ fun AddFileOrCaptureButton(
 
         ) {
 
-            //Text("Выбрать файл")
-            Icon(
-                imageVector = Icons.Filled.UploadFile,
-                contentDescription = "Выбрать файл",
-                tint = Color.White // Цвет иконки
-            )
+            Text("Файлы")
+//            Icon(
+//                imageVector = Icons.Filled.UploadFile,
+//                contentDescription = "Выбрать файл",
+//                tint = Color.White // Цвет иконки
+//            )
         }
 
 
@@ -825,7 +863,10 @@ fun SpeechToTextButton(
                         RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                         RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                     )
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE,
+                        //Locale.getDefault()
+                        "ru-RU"
+                    )
                     putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите...")
                 }
                 speechLauncher.launch(intent)
