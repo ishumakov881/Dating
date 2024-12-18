@@ -12,6 +12,7 @@ import com.lds.quickdeal.ui.screens.LoginScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.lds.quickdeal.ui.screens.SettingsScreen
+import com.lds.quickdeal.ui.screens.TaskListScreen
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,7 +29,6 @@ fun AppNavigation() {
 
         composable(route = "login") {
             LoginScreen(navController = navController)
-
         }
         composable(route = "form") {
             FormScreen(navController = navController)
@@ -37,6 +37,10 @@ fun AppNavigation() {
         composable(route = "settings") {
             SettingsScreen(navController = navController)
         }
+        composable(route = "tasks") {
+            TaskListScreen(navController = navController)
+        }
+
     }
 
 }

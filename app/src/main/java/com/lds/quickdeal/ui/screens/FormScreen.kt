@@ -2,53 +2,47 @@ package com.lds.quickdeal.ui.screens
 
 import android.Manifest
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Address
+import android.location.Geocoder
+import android.location.Location
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
-import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Attachment
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Photo
-import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material.icons.filled.VideoFile
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,43 +53,63 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.R
 import com.lds.quickdeal.android.config.Const
-import com.lds.quickdeal.android.config.OwnerWrapper
+import com.lds.quickdeal.android.config.Const.Companion.DEFAULT_OWNERS
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.utils.AttachFileType
 import com.lds.quickdeal.android.utils.PermissionResolver
 import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Owner
+import com.lds.quickdeal.megaplan.entity.TaskRequest
+import com.lds.quickdeal.ui.AddFileOrCaptureButton
 import com.lds.quickdeal.ui.LoadingAnimation
+import com.lds.quickdeal.ui.LogoutButton
+import com.lds.quickdeal.ui.MakeDropdownMenu
+import com.lds.quickdeal.ui.MakeLocationMenu
+import com.lds.quickdeal.ui.SpeechToTextButton
 
 import com.lds.quickdeal.ui.viewmodels.TaskViewModel
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import java.io.File
 import java.text.SimpleDateFormat
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 
 //var shareVideo: Uri? = null //Share this
@@ -105,10 +119,71 @@ import java.util.Locale
 
 
 var tmpVal: Uri? = Uri.EMPTY
+lateinit var fusedLocationClient: FusedLocationProviderClient
+
 
 @ExperimentalMaterial3Api
 @Composable
-fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hiltViewModel()) {
+fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltViewModel()) {
+
+    var context = LocalContext.current
+    val geocoder = Geocoder(context, Locale.getDefault())
+
+    val isTaskRunning by viewModel.isTaskRunning.observeAsState(false)
+
+    // Состояние для хранения координат
+    var latitude by remember { mutableStateOf<Double?>(null) }
+    var longitude by remember { mutableStateOf<Double?>(null) }
+    var address by remember { mutableStateOf<String>("Адрес не определён") }
+
+
+    LaunchedEffect(latitude, longitude) {
+        if (latitude != null && longitude != null) {
+            var tmp = geocoder.getAddress(latitude!!, longitude!!)
+            if (tmp != null) {
+                println("Адрес: ${tmp.getAddressLine(0)}")
+                address = tmp.getAddressLine(0)
+            } else {
+                println("Не удалось получить адрес")
+            }
+        }
+    }
+
+    val locationCallback: (Location?) -> Unit = { location: Location? ->
+        if (location != null) {
+            latitude = location.latitude
+            longitude = location.longitude
+//            if (!addresses.isNullOrEmpty()) {
+//                address = addresses[0].getAddressLine(0) // Получаем полный адрес
+//            } else {
+//                address = "Адрес не найден"
+//            }
+            Toast.makeText(context, "Геометка добавлена", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(
+                context,
+                "Не удалось получить местоположение",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+
+    //geolocation
+    fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            fusedLocationClient.lastLocation.addOnSuccessListener(locationCallback)
+        } else {
+            Toast.makeText(
+                context,
+                "Разрешение на доступ к местоположению не предоставлено",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
 
     var isLoading by remember { mutableStateOf(false) }
@@ -124,7 +199,13 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
     //var photoUri: Uri? = null //Share this
 
 
-    var selectedResponsible by remember { mutableStateOf(Const.DEFAULT_RESPONSIBLE) }
+//    var selectedResponsible by remember { mutableStateOf(
+//        if (DEFAULT_OWNERS.isEmpty()) null else DEFAULT_OWNERS[0]
+//    ) }
+
+    var selectedResponsible by remember {
+        mutableStateOf(DEFAULT_OWNERS.getOrNull(0))
+    }
 
     var expanded by remember { mutableStateOf(false) }
 
@@ -134,7 +215,6 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
     var topic by remember { mutableStateOf("Задача $currentDateTime") }
 
     var description by remember { mutableStateOf(if (BuildConfig.DEBUG) "Test Description" else "") }
-    var context = LocalContext.current
 
 
     val icon = painterResource(id = R.drawable.ic_settings)
@@ -159,7 +239,7 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
         if (isSuccess && photoUri != null) {
             Toast.makeText(context, "Фото сделано! $photoUri", Toast.LENGTH_LONG).show()
         } else {
-            Toast.makeText(context, "Фото не сделано", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Фото не сделано", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -170,11 +250,11 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
             val videoUri: Uri? = result.data?.data
             videoUri?.let {
                 // Здесь обрабатываем URI видео, например, показываем Toast
-                Toast.makeText(context, "Видео записано: $it", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Видео записано: $it", Toast.LENGTH_LONG).show()
             }
             shareVideo = videoUri
         } else {
-            Toast.makeText(context, "Запись видео отменена", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Запись видео отменена", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -223,8 +303,7 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
         } else {
             // Разрешение не получено, покажем сообщение
             Toast.makeText(
-                context,
-                "Разрешение на использование камеры не предоставлено",
+                context, "Разрешение на использование камеры не предоставлено",
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -257,16 +336,6 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
     }
 
 
-    val owners = listOf(
-        OwnerWrapper(
-            contentType = "Employee",
-            id = "1000161",
-            description = "Гурьева Юлия Валерьевна"
-        ), // Default Owner
-        OwnerWrapper("Employee", "1000216", "Резниченко Иван Павлович"),
-//        Owner("Employee", "1000163")
-    )
-
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -276,7 +345,7 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()), // Добавляем вертикальный скролл
+                .verticalScroll(rememberScrollState()),
 
 
             onDismissRequest = { showErrorDialog = false },
@@ -298,93 +367,258 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 
 
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Top
-    ) {
-        // Добавление тулбара с кнопкой перехода на экран настроек
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Основной контент
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Top
+            ) {
+                // Добавление тулбара с кнопкой перехода на экран настроек
 
 
-        TopAppBar(
-            title = { Text(text = "Создать заявку") },
-            actions = {
+                TopAppBar(
+                    title = { Text(text = "Создать заявку") },
+                    actions = {
 //                IconButton(onClick = {
 //                    navController.navigate("settings") // Переход на экран настроек
 //                }) {
 //                    Icon(painter = icon, contentDescription = "Настройки")
 //                }
-
-                IconButton(onClick = {
-                    logout(context)
-                    navController.navigate("login") {
-                        popUpTo("form") { inclusive = true }
-                    }
-                }) {
-                    Icon(imageVector = Icons.Filled.Logout, contentDescription = "Выход")
-                }
-
-
-            }
-        )
-
-        OutlinedTextField(
-            value = topic,
-            onValueChange = { topic = it },
-            label = { Text("Тема") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        )
-
-        OutlinedTextField(
-            value = description,
-            onValueChange = { description = it },
-            label = { Text("Содержание") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        )
-
-
-        Text("Ответственный", style = MaterialTheme.typography.labelLarge)
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = selectedResponsible.description,
-                onValueChange = {},
-                label = { Text("Ответственный") },
-                readOnly = true,
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                owners.forEach { owner ->
-                    DropdownMenuItem(
-                        text = { Text("${owner.description} (${owner.id})") },
-                        onClick = {
-                            selectedResponsible = owner
-                            expanded = false
+                        IconButton(onClick = {
+                            navController.navigate("tasks") // Переход на экран созданных задач
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.FormatListNumbered, // Иконка в виде списка
+                                contentDescription = "Созданные задачи"
+                            )
                         }
+
+                        IconButton(onClick = {
+                            when {
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED -> {
+                                    fusedLocationClient.lastLocation.addOnSuccessListener(
+                                        locationCallback
+                                    )
+                                }
+
+                                else -> {
+                                    // Запрашиваем разрешение на доступ к местоположению
+                                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                }
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.MyLocation,
+                                contentDescription = "Добавить геометку"
+                            )
+                        }
+
+                        LogoutButton(navController, context)
+                    }
+                )
+
+
+                //MAIN CONTAINER
+                OutlinedTextField(
+                    value = topic,
+                    onValueChange = { topic = it },
+                    label = { Text("Тема") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+
+                val presets = listOf(
+                    "Добавить стандартное приветствие" to { description += "\nЗдравствуйте! \n" },
+                    "Добавить текущее время" to { description += "\n${getCurrentTime()}" },
+                    //"Добавить шаблон заголовка" to { description += "\n### Заголовок\n" },
+                    "Добавить разделитель" to { description += "\n---\n" },
+                    "Очистить содержимое" to { description = "" },
+
+
+                    //"Добавить приоритет задачи" to { description += "\n**Приоритет:** Высокий\n" },
+                    "Добавить приоритет задачи" to {},
+
+
+                    "Добавить дедлайн" to { description += "\n**Дедлайн:** 31.12.2024\n" },
+                    "Добавить список подзадач" to { description += "\n- Подзадача 1\n- Подзадача 2\n- Подзадача 3\n" },
+                    //"Добавить описание бизнес-цели" to { description += "\n**Цель:** Увеличить производительность команды.\n" },
+
+                    "Добавить шаблон задачи по проекту" to { description += "\n**Проект:** Разработка нового продукта\n**Этап:** Исследование\n" },
+//                    "Добавить задачи по обучению" to { description += "\n- Прохождение курса по улучшению навыков общения\n- Обучение использованию новых инструментов\n" },
+//                    "Добавить статус задачи" to { description += "\n**Статус:** В процессе\n" },
+//                    "Добавить шаблон фидбека" to { description += "\n**Фидбек:** Прекрасно выполнена работа, нужно улучшить коммуникацию.\n" }
+                )
+
+                //DESCRIPTION
+
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Содержание") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 8.dp),
+                        minLines = 8,
+                        singleLine = false
                     )
+
+
+                    // Кнопка с меню пресетов
+                    Box(modifier = Modifier
+                        .align(Alignment.TopEnd) // Размещение кнопки справа
+                        .padding(top = 8.dp)) {
+                        var menuExpanded by remember { mutableStateOf(false) }
+
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Меню пресетов"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            presets.forEach { (title, action) ->
+                                if (title == "Добавить приоритет задачи") {
+                                    // Подменю для приоритета задачи
+                                    var priorityMenuExpanded by remember { mutableStateOf(false) }
+                                    DropdownMenuItem(
+                                        text = { Text(title) },
+                                        onClick = { priorityMenuExpanded = !priorityMenuExpanded }
+                                    )
+                                    if (priorityMenuExpanded) {
+                                        // Подменю для выбора приоритета задачи
+                                        listOf("Высокий", "Средний", "Низкий").forEach { priority ->
+                                            DropdownMenuItem(
+                                                text = { Text(priority) },
+                                                onClick = {
+                                                    description += "\n**Приоритет:** $priority\n"
+                                                    priorityMenuExpanded = false
+                                                    menuExpanded = false
+                                                    //Toast.makeText(context, "Приоритет: $priority", Toast.LENGTH_SHORT).show()
+                                                }
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    DropdownMenuItem(
+                                        text = { Text(title) },
+                                        onClick = {
+                                            action()
+                                            menuExpanded = false
+                                            //Toast.makeText(context, title, Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
+
+                //END_DESCRIPTION
 
 
-        //Attach information
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Пример: Если shareVideo не пустое, отображаем поле
-            shareVideo?.let {
-                UriUtils.getFileName(context, it)?.let { it1 ->
+                //=========================
+                selectedResponsible?.let {
+                    Text("Ответственный", style = MaterialTheme.typography.labelLarge)
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = it.description,
+                            onValueChange = {},
+                            label = { Text("Ответственный") },
+                            readOnly = true,
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            DEFAULT_OWNERS.forEach { owner ->
+                                DropdownMenuItem(
+                                    text = { Text("${owner.description} (${owner.id})") },
+                                    onClick = {
+                                        selectedResponsible = owner
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                //=========================
+
+
+                if (latitude != null && longitude != null) {
+
+                    MakeLocationMenu(
+                        "Широта: %.5f".format(latitude) + " " + "Долгота: %.5f".format(longitude),
+                        ""
+                    ) {
+                        latitude = null
+                        longitude = null
+                    }
+
+//                Text(
+//                    text = "Широта: %.5f".format(latitude) + " " + "Долгота: %.5f".format(longitude), // Округляем до 5 знаков после запятой
+//                    style = MaterialTheme.typography.titleSmall
+//                )
+
+
+//                Text(
+//                    text = "Долгота: %.5f".format(longitude),
+//                    style = MaterialTheme.typography.titleSmall
+//                )
+                }
+//        Column(modifier = Modifier.padding(16.dp)) {
+//            if (latitude != null && longitude != null) {
+////                Text(
+////                    text = "Широта: %.5f".format(latitude) + " " + "Долгота: %.5f".format(longitude), // Округляем до 5 знаков после запятой
+////                    style = MaterialTheme.typography.titleSmall
+////                )
+//
+//
+////                Text(
+////                    text = "Долгота: %.5f".format(longitude),
+////                    style = MaterialTheme.typography.titleSmall
+////                )
+//            } else {
+////                Text(
+////                    text = "Географические координаты не получены.",
+////                    style = MaterialTheme.typography.bodySmall,
+////                    color = Color.Gray
+////                )
+//            }
+//        }
+                //Attach information
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Пример: Если shareVideo не пустое, отображаем поле
+                    shareVideo?.let {
+                        UriUtils.getFileName(context, it)?.let { it1 ->
 //                    TextField(
 //                        value = it1,
 //                        onValueChange = {},
@@ -392,16 +626,15 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                        readOnly = true,
 //                        modifier = Modifier.fillMaxWidth()
 //                    )
-
-
-                    val fileName = UriUtils.getFileName(context, it).toString()
-                    MakeDropdownMenu(fileName, AttachFileType.VIDEO) {
-                        shareVideo = null
+                            val totalSize = UriUtils.formatFileSize(context, it)
+                            val fileName = UriUtils.getFileName(context, it).toString()
+                            MakeDropdownMenu(fileName, totalSize.toString(), AttachFileType.VIDEO) {
+                                shareVideo = null
+                            }
+                        }
                     }
-                }
-            }
 
-            // Пример: Если shareFileUri не пустое, отображаем поле
+                    // Пример: Если shareFileUri не пустое, отображаем поле
 //            shareFileUri?.let {
 //                TextField(
 //                    value = it.toString(),
@@ -412,9 +645,9 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                )
 //            }
 
-            // Пример: Если selectedFilesUris не пустое, отображаем информацию о файлах
-            selectedFilesUris?.takeIf { it.isNotEmpty() }?.let { files ->
-                // Проходим по каждому элементу списка selectedFilesUris
+                    // Пример: Если selectedFilesUris не пустое, отображаем информацию о файлах
+                    selectedFilesUris?.takeIf { it.isNotEmpty() }?.let { files ->
+                        // Проходим по каждому элементу списка selectedFilesUris
 //                files.forEach { file ->
 //                    val rawUri = file.platformFile.toString()
 //                    val uri = Uri.parse(rawUri)
@@ -423,7 +656,7 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                    println("Имя файла: $fileName")
 //                }
 
-                // Отображаем TextField с именами файлов
+                        // Отображаем TextField с именами файлов
 //                TextField(
 //                    value = files.joinToString(", ") { file ->
 //                        val rawUri = file.platformFile.toString()
@@ -436,12 +669,12 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                    modifier = Modifier.fillMaxWidth()
 //                )
 
-                files.forEachIndexed { index, file ->
-                    val rawUri =
-                        file.platformFile.toString() // Получаем строковое представление URI
-                    val uri = Uri.parse(rawUri)
-                    val fileName =
-                        UriUtils.getFileName(context, uri).toString() // Извлекаем имя файла
+                        files.forEachIndexed { index, file ->
+                            val rawUri =
+                                file.platformFile.toString() // Получаем строковое представление URI
+                            val uri = Uri.parse(rawUri)
+                            val fileName =
+                                UriUtils.getFileName(context, uri).toString() // Извлекаем имя файла
 
 //                    TextField(
 //                        value = fileName, // Отображаем имя файла
@@ -452,23 +685,25 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                    )
 
 
-                    MakeDropdownMenu(fileName, AttachFileType.FILE) {
-                        selectedFilesUris = selectedFilesUris?.let { currentList ->
-                            if (index in currentList.indices) {
-                                currentList.toMutableList().apply {
-                                    removeAt(index)
+                            val totalSize = UriUtils.formatFileSize(context, uri)
+
+                            MakeDropdownMenu(fileName, totalSize.toString(), AttachFileType.FILE) {
+                                selectedFilesUris = selectedFilesUris?.let { currentList ->
+                                    if (index in currentList.indices) {
+                                        currentList.toMutableList().apply {
+                                            removeAt(index)
+                                        }
+                                    } else {
+                                        currentList // Если индекс не найден, оставляем список без изменений
+                                    }
                                 }
-                            } else {
-                                currentList // Если индекс не найден, оставляем список без изменений
                             }
                         }
                     }
-                }
-            }
 
 
-            // Пример: Если photoUri не пустое, отображаем поле
-            photoUri?.let {
+                    // Пример: Если photoUri не пустое, отображаем поле
+                    photoUri?.let {
 
 
 //                TextField(
@@ -478,98 +713,140 @@ fun FormScreen(navController: NavController, taskViewModel: TaskViewModel = hilt
 //                    readOnly = true,
 //                    modifier = Modifier.fillMaxWidth()
 //                )
-                var title = UriUtils.getFileName(context, photoUri!!)
-                if (title != null) {
-                    MakeDropdownMenu(title, AttachFileType.PHOTO) {
-                        photoUri = null
+                        var title = UriUtils.getFileName(context, it)
+                        val totalSize = UriUtils.formatFileSize(context, it)
+
+                        if (title != null) {
+                            MakeDropdownMenu(title, totalSize.toString(), AttachFileType.PHOTO) {
+                                photoUri = null
+                            }
+                        }
                     }
                 }
-            }
-        }
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Показываем анимацию загрузки, если `isLoading` true
-            if (isLoading) {
-                LoadingAnimation()
-            }
-        }
-        //AddFileButton()
-        AddFileOrCaptureButton(
-            { newFiles ->
-                selectedFilesUris = newFiles // Обновляем selectedFilesUris через колбэк
-            },
-            cameraPermissionLauncherForPhoto,
-            cameraPermissionLauncherForVideo,
-            microphonePermissionLauncher
-        )
 
 
 //        Button(onClick = { /* Надиктовать текст */ }, modifier = Modifier.padding(top = 8.dp)) {
 //            Text("Надиктовать содержание")
 //        }
 
-        SpeechToTextButton(context, {
-            description += it
-        })
-
-        Button(
-            onClick = {
-
-                isLoading = true
-
-                taskViewModel.createTask(topic,
-                    description,
-                    selectedFilesUris,
-                    photoUri,
-                    shareVideo,
-                    Owner(
-                        contentType = selectedResponsible.contentType,
-                        id = selectedResponsible.id
-                    ),
-                    { taskResponse ->
-                        isLoading = false
-                        if (taskResponse.meta.status == 200) {
-                            Toast.makeText(context, "ЗАДАЧА ДОБАВЛЕНА!", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(
-                                context,
-                                "Success... {$taskResponse.accessToken}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-
-                        //navController.navigate("form")
-
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    SpeechToTextButton(context) {
+                        description += it
+                    }
+                }
+                //AddFileButton()
+                AddFileOrCaptureButton(
+                    { newFiles ->
+                        selectedFilesUris = newFiles // Обновляем selectedFilesUris через колбэк
                     },
-                    { err ->
-//                    if (BuildConfig.DEBUG) {
-//                        errorMessage = "Ошибка при создании задачи: $err"
-//                        showErrorDialog = true
-//                    } else {
-//                        Toast.makeText(
-//                            context,
-//                            "Ошибка при создании задачи: $err",
-//                            Toast.LENGTH_LONG
-//                        ).show()
-//                    }
-                        isLoading = false
-                        println("$err")
-                        Toast.makeText(
-                            context,
-                            "Ошибка при создании задачи: $err",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    })
-            },
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .align(Alignment.End)
-        ) {
-            Text("Отправить")
+                    cameraPermissionLauncherForPhoto,
+                    cameraPermissionLauncherForVideo,
+                    microphonePermissionLauncher
+                )
+
+
+
+
+                Button(
+                    onClick = {
+                        if (isTaskRunning) {
+                            viewModel.cancelTask()
+                            isLoading = false
+                            Toast.makeText(context, "Задача отменена", Toast.LENGTH_SHORT).show()
+                        } else {
+
+                            isLoading = true
+
+                            val vacancyId = "1018054"
+                            val taskRequest = TaskRequest(
+                                name = description,
+                                subject = topic
+                                //    attaches = attaches,
+                                //    auditors = auditors,
+                                //    executors = executors,
+                                // Временно убрали parent = Parent(contentType = "Task", id = vacancyId) // ID родительской задачи
+                                , isTemplate = false //Добавили
+                                , isUrgent = false //Добавили
+                                , latitude = latitude, longitude = longitude
+
+                            )
+                            // ID ответственного | owner = Owner(contentType = "Employee", id = "1000093"),
+                            selectedResponsible?.let {
+                                taskRequest.responsible = Owner(
+                                    contentType = "Employee",//it.contentType
+                                    id = it.id
+                                )
+                            }
+
+                            viewModel.createTask(
+                                taskRequest,
+                                selectedFilesUris,
+                                photoUri,
+                                shareVideo,
+                                { taskResponse ->
+                                    isLoading = false
+                                    Toast.makeText(context, "Задача добавлена!", Toast.LENGTH_SHORT)
+                                        .show()
+                                },
+                                { err ->
+                                    isLoading = false
+                                    Toast.makeText(context, "Ошибка: $err", Toast.LENGTH_LONG)
+                                        .show()
+                                }
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isTaskRunning) Color.Red else MaterialTheme.colorScheme.primary
+
+                    ),
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .align(Alignment.End)
+                ) {
+                    if (isTaskRunning) {
+                        Icon(Icons.Filled.Close, contentDescription = "Отменить")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Отменить ")
+                    } else {
+                        Icon(Icons.Filled.Send, contentDescription = "Отправить")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Отправить")
+                    }
+                }
+                //END MAIN CONTAINER
+
+            }
+        }
+
+        // Прогресс-бар, накладываемый поверх контента
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x2C000000)) // Полупрозрачный фон
+                    .wrapContentSize(Alignment.Center)
+            ) {
+                LoadingAnimation()
+                //CircularProgressIndicator()
+            }
         }
     }
 
 
 }
+
+fun getCurrentTime(): String {
+    val currentTime = Calendar.getInstance().time
+    val formatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    return formatter.format(currentTime)
+}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -577,68 +854,6 @@ fun PreviewLoadingAnimation() {
     LoadingAnimation()
 }
 
-@Composable
-fun MakeDropdownMenu(title: String, filetype: AttachFileType, onRemoveClicked: () -> Unit) {
-
-    val icon = when (filetype) {
-        AttachFileType.FILE -> Icons.Filled.AttachFile
-        AttachFileType.PHOTO -> Icons.Filled.Photo
-        AttachFileType.VIDEO -> Icons.Filled.VideoFile
-        else -> Icons.Filled.Attachment
-    }
-
-    var menuExpanded by remember { mutableStateOf(false) }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.CenterStart), // Размещаем содержимое влево
-            verticalAlignment = Alignment.CenterVertically // Центрируем по вертикали
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = "Attach",
-                tint = Color.Red
-            )
-            Text(
-                text = title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { menuExpanded = true }
-                    .padding(8.dp)
-            )
-        }
-
-        // Отображение имени файла
-
-        DropdownMenu(
-            expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false }
-        ) {
-            DropdownMenuItem(
-                onClick = {
-                    menuExpanded = false
-                    onRemoveClicked()
-                },
-                text = { Text("Удалить") },
-                modifier = Modifier.padding(horizontal = 16.dp),
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.DeleteForever,
-                        contentDescription = "Menu Icon"
-                    )
-                },
-                contentPadding = PaddingValues(horizontal = 12.dp)
-            )
-        }
-    }
-
-}
 
 fun logout(context: Context) {
     val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
@@ -713,182 +928,27 @@ fun launchVideoRecording(
     }
 }
 
-
-@Composable
-fun AddFileOrCaptureButton(
-
-    onFileSelected: (List<MPFile<Any>>?) -> Unit,
-    cameraPermissionLauncherForPhoto: ManagedActivityResultLauncher<String, Boolean>,
-    cameraPermissionLauncherForVideo: ManagedActivityResultLauncher<String, Boolean>,
-
-    microphonePermissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
-) {
-    val context = LocalContext.current
-
-    var showFilePicker by remember { mutableStateOf(false) }
-
-    val fileType = Const.UPLOAD_FILE_EXT
-    if (showFilePicker) {
-        MultipleFilePicker(show = showFilePicker, fileExtensions = fileType) { file ->
-            showFilePicker = false
-            // Обработка выбранного файла
-            println("Выбран файл: $file")
-
-            if (file.isNullOrEmpty()) {
-                Toast.makeText(context, "Файлы не выбраны", Toast.LENGTH_SHORT).show()
-            } else {
-                onFileSelected(file)
-            }
-        }
-    }
-
-//    val fileLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()
-//    ) { uri: Uri? ->
-//        if (uri != null) {
-//            Toast.makeText(context, "Выбран файл: $uri", Toast.LENGTH_SHORT).show()
-//            shareFileUri = uri
-//        } else {
-//            Toast.makeText(context, "Файл не выбран", Toast.LENGTH_SHORT).show()
-//        }
-//    }
-
-    //val icon = painterResource(id = R.drawable.file_upload)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-//        IconButton(onClick = {
-//
-//            //fileLauncher.launch("*/*")
-//            showFilePicker = true
-//        }
-//
-//        ) {
-//            Icon(imageVector = Icons.Filled.UploadFile, "Файлы")
-//        }
-
-
-        Button(onClick = {
-
-            //fileLauncher.launch("*/*")
-            showFilePicker = true
-        }
-
-        ) {
-
-            Text("Файлы")
-//            Icon(
-//                imageVector = Icons.Filled.UploadFile,
-//                contentDescription = "Выбрать файл",
-//                tint = Color.White // Цвет иконки
-//            )
-        }
-
-
-        Spacer(modifier = Modifier.width(16.dp)) // Отступ между кнопками
-        Button(onClick = {
-
-            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-            val packageManager = context.packageManager
-
-            if (intent.resolveActivity(packageManager) != null) {
-                cameraPermissionLauncherForPhoto.launch(Manifest.permission.CAMERA)
-            } else {
-                Toast.makeText(
-                    context,
-                    "На устройстве отсутствует приложение камеры",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-        }) {
-            Text("Фото")//Сделать фото
-
-        }
-        Spacer(modifier = Modifier.width(16.dp)) // Отступ между кнопками
-        Button(onClick = {
-            val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
-            val packageManager = context.packageManager
-
-            if (intent.resolveActivity(packageManager) != null) {
-
-                if (PermissionResolver.isCameraGranted(context)) {
-                    microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                } else {
-                    cameraPermissionLauncherForVideo.launch(
-                        Manifest.permission.CAMERA
-                    )
+private suspend fun Geocoder.getAddress(
+    latitude: Double,
+    longitude: Double,
+): Address? = withContext(Dispatchers.IO) {
+    try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            suspendCoroutine { cont ->
+                getFromLocation(latitude, longitude, 1) {
+                    cont.resume(it.firstOrNull())
                 }
-            } else {
-                Toast.makeText(
-                    context,
-                    "На устройстве отсутствует приложение для записи видео",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
-        }) {
-            Text("Видео")
-        }
-    }
-}
-
-@Composable
-fun SpeechToTextButton(
-    context: Context, onSpeechRecognized: (String) -> Unit
-) {
-    // Состояние для хранения результата
-    val recognizedText = remember { mutableStateOf("") }
-
-    // Лаунчер для получения результата
-    val speechLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val data = result.data
-            val matches = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            if (!matches.isNullOrEmpty()) {
-                recognizedText.value = matches[0]
-                onSpeechRecognized(recognizedText.value)
+        } else {
+            suspendCoroutine { cont ->
+                @Suppress("DEPRECATION")
+                val address = getFromLocation(latitude, longitude, 1)?.firstOrNull()
+                cont.resume(address)
             }
         }
-    }
-
-    Button(
-        onClick = {
-            try {
-                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(
-                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                    )
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE,
-                        //Locale.getDefault()
-                        "ru-RU"
-                    )
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Говорите...")
-                }
-                speechLauncher.launch(intent)
-            } catch (e: ActivityNotFoundException) {
-                Toast.makeText(
-                    context,
-                    "Ваше устройство не поддерживает распознавание речи",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        },
-        modifier = Modifier.padding(top = 8.dp)
-    ) {
-        Text("Надиктовать содержание")
-    }
-
-    // Отображение надиктованного текста
-    if (recognizedText.value.isNotEmpty()) {
-        Text(
-            text = "Распознанный текст: ${recognizedText.value}",
-            modifier = Modifier.padding(top = 16.dp)
-        )
+    } catch (e: Exception) {
+        println(e)
+        null
     }
 }
 

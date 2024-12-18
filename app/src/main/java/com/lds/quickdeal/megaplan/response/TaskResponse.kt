@@ -74,6 +74,10 @@ data class Participant(
     val id: String
 )
 
+
+
+
+//Megaplan original API
 //@Serializable
 //data class TaskResponse(
 //    val contentType: String, // Всегда Task

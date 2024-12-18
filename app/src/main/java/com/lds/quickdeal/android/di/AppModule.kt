@@ -1,6 +1,7 @@
 package com.lds.quickdeal.android.di
 
 import android.content.Context
+import com.lds.quickdeal.android.db.TaskDao
 import com.lds.quickdeal.network.AuthRepository
 import com.lds.quickdeal.repository.TaskRepository
 import dagger.Module
@@ -73,7 +74,9 @@ object AppModule {
                 level = LogLevel.HEADERS
             }
             install(HttpTimeout) {
-                requestTimeoutMillis = 1000_00
+                requestTimeoutMillis = 600_000 // Таймаут запроса
+                connectTimeoutMillis = 300_000 // Таймаут подключения
+                socketTimeoutMillis = 300_000 // Таймаут сокета
             }
         }
     }
@@ -86,8 +89,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTaskRepository(context: Context, client: HttpClient): TaskRepository {
-        return TaskRepository(client, context)
+    fun provideTaskRepository(context: Context, client: HttpClient, dao : TaskDao): TaskRepository {
+        return TaskRepository(dao, client, context)
     }
 
 

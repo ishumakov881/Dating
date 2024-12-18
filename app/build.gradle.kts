@@ -7,13 +7,16 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 
-
+    id("com.google.devtools.ksp")
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
     //alias(libs.plugins.google.gms.google.services)
     kotlin("plugin.serialization")
 }
-
+//ksp {
+//    arg("room.schemaLocation", "$projectDir/schemas") // Опционально: для сохранения схем базы данных
+//    arg("room.incremental", "true") // Оптимизация для ускорения сборки
+//}
 fun getConfigValue(key: String, defaultValue: String): String {
     val properties = Properties()
     val configFile = file("C:\\/config.properties")
@@ -101,15 +104,28 @@ kapt {
 }
 
 dependencies {
+
+    //implementation(libs.richeditor.compose)
+    // Room
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.room.ktx)
+
+    implementation(libs.androidx.runtime.livedata)
+    debugImplementation(libs.leakcanary.android)
+
+    //implementation("androidx.activity:activity-compose:1.9.3")
+    implementation(libs.accompanist.permissions)
     implementation(libs.androidx.material.icons.extended)
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("com.darkrockstudios:mpfilepicker:3.1.0")
+    implementation(libs.play.services.location)
 
     val ktor_version = "3.0.1"
     implementation("io.ktor:ktor-client-logging:$ktor_version") // Для логов
 
-    implementation("com.unboundid:unboundid-ldapsdk:6.0.6")
+    implementation(libs.unboundid.ldapsdk)
 
 
     implementation("com.google.dagger:hilt-android:2.51.1")

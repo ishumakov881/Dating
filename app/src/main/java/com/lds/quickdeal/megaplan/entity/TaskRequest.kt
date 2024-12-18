@@ -1,17 +1,23 @@
 package com.lds.quickdeal.megaplan.entity
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.lang.reflect.Constructor
 
 @Serializable
 data class TaskRequest(
+
+
+    //Custom Options
+
+    val latitude: Double?,
+    val longitude: Double?,
+
+
 
     val name: String? = null, // Название
     val subject: String? = null, // Описание задачи
     val owner: Owner? = null, // Владелец (Создатель)
     val contentType: String = "Task", // всегда равен "Task"
-    val responsible: Owner? = null, // Ответственный - UserUnion
+    var responsible: Owner? = null, // Ответственный - UserUnion
     val parent: Parent? = null, // Надзадача/надпроект
 
     val isUrgent: Boolean? = null, // Горящая
@@ -46,6 +52,7 @@ data class TaskRequest(
 //
 //
     val isTemplate: Boolean? = null, // Является шаблоном
+
 //    val originalTemplate: Task? = null, // Оригинальный шаблон
 //    val templateUsers: List<UserUnion>? = null, // Пользователи шаблона
 //    val templateUsersCount: Int? = null, // Количество пользователей шаблона
