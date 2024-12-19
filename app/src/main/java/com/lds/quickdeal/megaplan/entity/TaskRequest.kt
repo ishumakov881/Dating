@@ -1,5 +1,6 @@
 package com.lds.quickdeal.megaplan.entity
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -15,6 +16,10 @@ data class TaskRequest(
 
     val name: String? = null, // Название
     val subject: String? = null, // Описание задачи
+
+    @SerialName("megaplanId")
+    val megaplanId: String = "",
+
     val owner: Owner? = null, // Владелец (Создатель)
     val contentType: String = "Task", // всегда равен "Task"
     var responsible: Owner? = null, // Ответственный - UserUnion

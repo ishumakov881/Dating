@@ -22,7 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
-import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
+import com.darkrockstudios.libraries.mpfilepicker.newversion.MultipleFilePickerNew
+
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.utils.PermissionResolver
 
@@ -39,7 +40,7 @@ fun AddFileOrCaptureButton(
 
     val fileType = Const.UPLOAD_FILE_EXT
     if (showFilePicker) {
-        MultipleFilePicker(show = showFilePicker, fileExtensions = fileType) { file ->
+        MultipleFilePickerNew(show = showFilePicker, fileExtensions = fileType, initialDirectory = null, title = null) { file ->
             showFilePicker = false
             // Обработка выбранного файла
             println("Выбран файл: $file")

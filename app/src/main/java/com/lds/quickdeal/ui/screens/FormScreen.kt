@@ -12,7 +12,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -32,17 +31,14 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,6 +59,7 @@ import androidx.compose.runtime.remember
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,16 +73,15 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
-import com.darkrockstudios.libraries.mpfilepicker.MultipleFilePicker
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.R
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.Const.Companion.DEFAULT_OWNERS
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
+import com.lds.quickdeal.android.entity.TaskStatus
+import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.AttachFileType
-import com.lds.quickdeal.android.utils.PermissionResolver
 import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Owner
 import com.lds.quickdeal.megaplan.entity.TaskRequest
@@ -103,10 +99,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import java.io.File
 import java.text.SimpleDateFormat
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -124,17 +117,37 @@ lateinit var fusedLocationClient: FusedLocationProviderClient
 
 @ExperimentalMaterial3Api
 @Composable
-fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltViewModel()) {
+fun FormScreen(
+    navController: NavController,
+    taskId: String = "",
+    viewModel: TaskViewModel = hiltViewModel()
+) {
+
+    val currentTask by viewModel.currentTask.observeAsState(
+        UploaderTask(
+            -1, "", "", false,
+            TaskStatus.NONE, "", "", ""
+        )
+    )
+    LaunchedEffect(taskId) {
+        viewModel.setTaskForEditing(taskId)
+    }
+
 
     var context = LocalContext.current
     val geocoder = Geocoder(context, Locale.getDefault())
 
     val isTaskRunning by viewModel.isTaskRunning.observeAsState(false)
 
+    //var description by remember { mutableStateOf(if (BuildConfig.DEBUG) "Test Description" else "") }
+    //var description by rememberSaveable { mutableStateOf(if (BuildConfig.DEBUG) "Test Description" else "") }
+    //val description by viewModel.description.observeAsState("")
+    //var topic by rememberSaveable { mutableStateOf("Задача $currentDateTime") }
+
     // Состояние для хранения координат
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
-    var address by remember { mutableStateOf<String>("Адрес не определён") }
+    var latitude by rememberSaveable { mutableStateOf<Double?>(null) }
+    var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
+    var address by rememberSaveable { mutableStateOf<String>("Адрес не определён") }
 
 
     LaunchedEffect(latitude, longitude) {
@@ -186,14 +199,14 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
     }
 
 
-    var isLoading by remember { mutableStateOf(false) }
+    var isLoading by rememberSaveable { mutableStateOf(false) }
 
-    var shareVideo by remember { mutableStateOf<Uri?>(null) }
+    var shareVideo by rememberSaveable { mutableStateOf<Uri?>(null) }
     //var shareFileUri by remember { mutableStateOf<Uri?>(null) }
 
     //var videoUri by remember { mutableStateOf<Uri?>(null) }
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
-    var selectedFilesUris by remember { mutableStateOf<List<MPFile<Any>>?>(null) }
+    var photoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var selectedFilesUris by rememberSaveable { mutableStateOf<List<MPFile<Any>>?>(null) }
 
     var photoFile: File? = null
     //var photoUri: Uri? = null //Share this
@@ -203,19 +216,11 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
 //        if (DEFAULT_OWNERS.isEmpty()) null else DEFAULT_OWNERS[0]
 //    ) }
 
-    var selectedResponsible by remember {
+    var selectedResponsible by rememberSaveable {
         mutableStateOf(DEFAULT_OWNERS.getOrNull(0))
     }
 
-    var expanded by remember { mutableStateOf(false) }
-
-    val currentDateTime = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-        .format(Date())
-
-    var topic by remember { mutableStateOf("Задача $currentDateTime") }
-
-    var description by remember { mutableStateOf(if (BuildConfig.DEBUG) "Test Description" else "") }
-
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
     val icon = painterResource(id = R.drawable.ic_settings)
 
@@ -336,8 +341,8 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
     }
 
 
-    var showErrorDialog by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    var showErrorDialog by rememberSaveable { mutableStateOf(false) }
+    var errorMessage by rememberSaveable { mutableStateOf("") }
 
     if (showErrorDialog) {
         AlertDialog(
@@ -385,21 +390,29 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
 
 
                 TopAppBar(
-                    title = { Text(text = "Создать заявку") },
+                    title = {
+                        Text(
+                            text = if (taskId.isEmpty()) "Создать заявку" else "Заявка №${currentTask?.megaplanId}"
+                        )
+                    },
                     actions = {
 //                IconButton(onClick = {
 //                    navController.navigate("settings") // Переход на экран настроек
 //                }) {
 //                    Icon(painter = icon, contentDescription = "Настройки")
 //                }
-                        IconButton(onClick = {
-                            navController.navigate("tasks") // Переход на экран созданных задач
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.FormatListNumbered, // Иконка в виде списка
-                                contentDescription = "Созданные задачи"
-                            )
+                        if (taskId.isEmpty()) {
+                            IconButton(onClick = {
+                                navController.navigate("tasks") // Переход на экран созданных задач
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.FormatListNumbered, // Иконка в виде списка
+                                    contentDescription = "Созданные задачи"
+                                )
+                            }
                         }
+
+
 
                         IconButton(onClick = {
                             when {
@@ -424,38 +437,41 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
                             )
                         }
 
-                        LogoutButton(navController, context)
+                        if (taskId.isEmpty()) {
+                            LogoutButton(navController, context)
+                        }
+
                     }
                 )
 
 
                 //MAIN CONTAINER
                 OutlinedTextField(
-                    value = topic,
-                    onValueChange = { topic = it },
+                    value = currentTask!!.name,
+                    onValueChange = { newName -> viewModel.updateTaskName(newName) },
                     label = { Text("Тема") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 )
 
-                val presets = listOf(
-                    "Добавить стандартное приветствие" to { description += "\nЗдравствуйте! \n" },
-                    "Добавить текущее время" to { description += "\n${getCurrentTime()}" },
+                val FORM_PRESETS = listOf(
+                    "Очистить содержимое" to { viewModel.updateDescription("") },
+                    "Добавить стандартное приветствие" to { viewModel.appendDescription("\nЗдравствуйте! \n") },
+                    "Добавить текущее время" to { viewModel.appendDescription("\n${getCurrentTime()}") },
                     //"Добавить шаблон заголовка" to { description += "\n### Заголовок\n" },
-                    "Добавить разделитель" to { description += "\n---\n" },
-                    "Очистить содержимое" to { description = "" },
+                    "Добавить разделитель" to { viewModel.appendDescription("\n---\n") },
 
 
                     //"Добавить приоритет задачи" to { description += "\n**Приоритет:** Высокий\n" },
                     "Добавить приоритет задачи" to {},
 
 
-                    "Добавить дедлайн" to { description += "\n**Дедлайн:** 31.12.2024\n" },
-                    "Добавить список подзадач" to { description += "\n- Подзадача 1\n- Подзадача 2\n- Подзадача 3\n" },
+                    "Добавить дедлайн" to { viewModel.appendDescription("\n**Дедлайн:** 31.12.2024\n") },
+                    "Добавить список подзадач" to { viewModel.appendDescription("\n- Подзадача 1\n- Подзадача 2\n- Подзадача 3\n") },
                     //"Добавить описание бизнес-цели" to { description += "\n**Цель:** Увеличить производительность команды.\n" },
 
-                    "Добавить шаблон задачи по проекту" to { description += "\n**Проект:** Разработка нового продукта\n**Этап:** Исследование\n" },
+                    "Добавить шаблон задачи по проекту" to { viewModel.appendDescription("\n**Проект:** Разработка нового продукта\n**Этап:** Исследование\n") },
 //                    "Добавить задачи по обучению" to { description += "\n- Прохождение курса по улучшению навыков общения\n- Обучение использованию новых инструментов\n" },
 //                    "Добавить статус задачи" to { description += "\n**Статус:** В процессе\n" },
 //                    "Добавить шаблон фидбека" to { description += "\n**Фидбек:** Прекрасно выполнена работа, нужно улучшить коммуникацию.\n" }
@@ -471,8 +487,8 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
 
 
                     OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
+                        value = currentTask!!.subject,
+                        onValueChange = { viewModel.updateDescription(it) },
                         label = { Text("Содержание") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -483,9 +499,11 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
 
 
                     // Кнопка с меню пресетов
-                    Box(modifier = Modifier
-                        .align(Alignment.TopEnd) // Размещение кнопки справа
-                        .padding(top = 8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd) // Размещение кнопки справа
+                            .padding(top = 8.dp)
+                    ) {
                         var menuExpanded by remember { mutableStateOf(false) }
 
                         IconButton(onClick = { menuExpanded = true }) {
@@ -498,7 +516,7 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false }
                         ) {
-                            presets.forEach { (title, action) ->
+                            FORM_PRESETS.forEach { (title, action) ->
                                 if (title == "Добавить приоритет задачи") {
                                     // Подменю для приоритета задачи
                                     var priorityMenuExpanded by remember { mutableStateOf(false) }
@@ -512,7 +530,7 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
                                             DropdownMenuItem(
                                                 text = { Text(priority) },
                                                 onClick = {
-                                                    description += "\n**Приоритет:** $priority\n"
+                                                    viewModel.appendDescription("\n**Приоритет:** $priority\n")
                                                     priorityMenuExpanded = false
                                                     menuExpanded = false
                                                     //Toast.makeText(context, "Приоритет: $priority", Toast.LENGTH_SHORT).show()
@@ -736,9 +754,10 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
                     horizontalArrangement = Arrangement.Center
                 ) {
                     SpeechToTextButton(context) {
-                        description += it
+                        viewModel.appendDescription("\n $it")
                     }
                 }
+
                 //AddFileButton()
                 AddFileOrCaptureButton(
                     { newFiles ->
@@ -754,6 +773,7 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
 
                 Button(
                     onClick = {
+
                         if (isTaskRunning) {
                             viewModel.cancelTask()
                             isLoading = false
@@ -764,16 +784,20 @@ fun FormScreen(navController: NavController, viewModel: TaskViewModel = hiltView
 
                             val vacancyId = "1018054"
                             val taskRequest = TaskRequest(
-                                name = description,
-                                subject = topic
+                                name = currentTask.name,
+                                subject = currentTask.subject
                                 //    attaches = attaches,
                                 //    auditors = auditors,
                                 //    executors = executors,
                                 // Временно убрали parent = Parent(contentType = "Task", id = vacancyId) // ID родительской задачи
-                                , isTemplate = false //Добавили
-                                , isUrgent = false //Добавили
-                                , latitude = latitude, longitude = longitude
-
+                                ,
+                                isTemplate = false //Добавили
+                                ,
+                                isUrgent = false //Добавили
+                                ,
+                                latitude = latitude,
+                                longitude = longitude,
+                                megaplanId = currentTask.megaplanId
                             )
                             // ID ответственного | owner = Owner(contentType = "Employee", id = "1000093"),
                             selectedResponsible?.let {
@@ -858,8 +882,8 @@ fun PreviewLoadingAnimation() {
 fun logout(context: Context) {
     val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
     prefs.edit().apply {
-        putString(SettingsPreferencesKeys.AD_USERNAME, null)
-        putString(SettingsPreferencesKeys.AD_PASSWORD, null)
+        putString(SettingsPreferencesKeys.AD_USERNAME, "")
+        putString(SettingsPreferencesKeys.AD_PASSWORD, "")
         apply()
     }
 }

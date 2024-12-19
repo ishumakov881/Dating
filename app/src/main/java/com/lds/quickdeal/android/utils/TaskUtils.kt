@@ -16,7 +16,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 class TaskUtils {
-    companion object{
+    companion object {
 
         fun FormBuilder.appendTaskRequest(context: Context, taskRequest: TaskRequest) {
 //                        append("json", kotlinx.serialization.json.Json.encodeToString(TaskRequest.serializer(),taskRequest), Headers.build {
@@ -40,11 +40,14 @@ class TaskUtils {
 
             taskRequest.name?.let { append("name", it) }
             taskRequest.subject?.let { append("subject", it) }
+            append("megaplanId", taskRequest.megaplanId)
+
             append("contentType", "Task")
             append("isTemplate", "false")
             append("isUrgent", "false")
             append("responsibleContentType", "Employee")
             taskRequest.responsible?.let { append("responsibleId", it.id) }
+
 
             append("app_version", BuildConfig.VERSION_NAME) // Версия приложения
             append("device_model", deviceModel) // Модель устройства

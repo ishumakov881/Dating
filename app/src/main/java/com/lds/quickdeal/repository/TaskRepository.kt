@@ -1,16 +1,7 @@
 package com.lds.quickdeal.repository
 
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.res.Configuration
-import android.content.res.Resources
-import android.net.ConnectivityManager
 import android.net.Uri
-import android.os.BatteryManager
-import android.os.Build
-import android.os.ParcelFileDescriptor
-import android.telephony.TelephonyManager
 import android.webkit.MimeTypeMap
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
@@ -19,7 +10,7 @@ import com.lds.quickdeal.android.config.Const.Companion.FILE_KEY
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys.SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN
 import com.lds.quickdeal.android.db.TaskDao
-import com.lds.quickdeal.android.entity.Task
+import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TaskUtils.Companion.appendTaskRequest
 import com.lds.quickdeal.android.utils.TimeUtils
 import com.lds.quickdeal.android.utils.UriUtils
@@ -35,22 +26,16 @@ import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.append
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.streams.asInput
 import kotlinx.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -162,18 +147,12 @@ class TaskRepository @Inject constructor(
 
 
         try {
-
-
             val response: HttpResponse = client.post("${Const.API_URL}${Const.API_UPLOAD}") {
                 setBody(
                     MultiPartFormDataContent(
                         formData {
                             appendTaskRequest(context, taskRequest)
-                            if (username != null) {
-                                append("username", username)
-                            }
-
-
+                            append("username", username?:"")
                             selectedFiles?.forEach { file ->
                                 val rawUri = file.platformFile.toString()
                                 val uri = Uri.parse(rawUri)
@@ -404,25 +383,26 @@ class TaskRepository @Inject constructor(
                     val taskResponse: TaskResponse = response.body()
 
                     println("@@@@@@@@@@@@@@@ ${taskResponse.synced}  ${taskResponse.megaplanId}")
+                    println("@@@@@@@@@@@@@@@ ${taskResponse.name}  ${taskResponse.subject}")
 
-
-                    var completed = !taskResponse.synced.isNullOrEmpty() && !taskResponse.megaplanId.isNullOrEmpty()
-                    println("COMPLETED ?? $completed")
 
                     // Сохраняем задачу в базе данных, если ответ успешный
-                    val createAtNow =TimeUtils.nowTimeFormatted()
+                    val createAtNow = TimeUtils.nowTimeFormatted()
 
-                    val task = Task(
-                        //id = taskResponse.meta.status.toString(), // предполагаем, что ID задачи приходит с сервера
+                    val task = UploaderTask(
+                        //id = taskResponse.meta.status.toString(),
                         name = taskRequest.name,
                         subject = taskRequest.subject,
                         isUrgent = false,//????????????????
-                        completed = completed // Можно добавить логику для задания статуса задачи
-                        , createdAt = taskResponse.createdAt ?: createAtNow
-                        , updatedAt = taskResponse.updatedAt ?: createAtNow
+                        status = taskResponse.getStatus() // Можно добавить логику для задания статуса задачи
+                        ,
+                        createdAt = taskResponse.createdAt ?: createAtNow,
+                        updatedAt = taskResponse.updatedAt ?: createAtNow,
+                        megaplanId = taskResponse.megaplanId
+                            ?: "" // предполагаем, что ID задачи приходит с сервера
                     )
 
-                    taskDao.insert(task) // Сохраняем задачу в базе данных
+                    taskDao.insert(task)
                     Result.success(taskResponse)
 
 
@@ -438,7 +418,8 @@ class TaskRepository @Inject constructor(
                     var msg = errorResponse.message
 
                     if (BuildConfig.DEBUG) {
-                        println(errorResponse.toString())
+                        println("ОШИБКА СЕРВЕРА: " + errorResponse.toString())
+                        println("ОШИБКА СЕРВЕРА: " + errorResponse.message)
                     }
 
                     Result.failure(Exception(msg))
@@ -469,6 +450,9 @@ class TaskRepository @Inject constructor(
             // Обработка остальных исключений
             println("Неизвестная ошибка: ${e.javaClass}: ${e.message}")
             return Result.failure(Exception("Произошла неизвестная ошибка"))
+        }catch (e: OutOfMemoryError) {
+            println("FileLoad OOM при загрузке файла $e")
+            return Result.failure(Exception("Ошибка: недостаточно памяти для обработки файла"))
         }
     }
 

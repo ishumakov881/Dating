@@ -23,3 +23,4 @@ rootProject.name = "QuickDeal"
 include(":app")
 //include(":shared")
 
+include(":desktop")

@@ -2,9 +2,9 @@ package com.lds.quickdeal.android.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.lds.quickdeal.android.entity.Task
+import com.lds.quickdeal.android.entity.UploaderTask
 
-@Database(entities = [Task::class], version = 1)
+@Database(entities = [UploaderTask::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
 }

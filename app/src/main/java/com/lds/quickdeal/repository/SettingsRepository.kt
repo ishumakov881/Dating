@@ -2,6 +2,7 @@ package com.lds.quickdeal.repository
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 
@@ -95,14 +96,13 @@ class SettingsRepository @Inject constructor(
     //AD
     fun saveADCredential(username: String, password: String): Unit {
         val editor = sharedPreferences.edit()
-        editor.putString(SettingsPreferencesKeys.AD_USERNAME, username)//Reuse same username
+        editor.putString(SettingsPreferencesKeys.AD_USERNAME, username)
 
         var mpUserName = getMegaPlanUserName()
 
-        if (mpUserName.isEmpty()) {
+        if (mpUserName.isEmpty()) {//Reuse same username
             editor.putString(SettingsPreferencesKeys.MEGAPLAN_USERNAME, username)
         }
-
 
         editor.putString(SettingsPreferencesKeys.AD_PASSWORD, password)
         editor.apply()
@@ -113,11 +113,11 @@ class SettingsRepository @Inject constructor(
     }
 
     fun getADuserName(): String {
-        return sharedPreferences.getString(SettingsPreferencesKeys.AD_USERNAME, "") ?: ""
+        return sharedPreferences.getString(SettingsPreferencesKeys.AD_USERNAME, BuildConfig.ACTIVE_DIRECTORY_USERNAME) ?: ""
     }
 
     fun getADPassword(): String {
-        return sharedPreferences.getString(SettingsPreferencesKeys.AD_PASSWORD, "") ?: ""
+        return sharedPreferences.getString(SettingsPreferencesKeys.AD_PASSWORD, BuildConfig.ACTIVE_DIRECTORY_PASSWORD) ?: ""
     }
 
 }

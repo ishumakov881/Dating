@@ -1,17 +1,26 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Properties
+import org.gradle.kotlin.dsl.implementation
 
+//import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
+    id("kotlin-parcelize")
     id("com.google.devtools.ksp")
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
     //alias(libs.plugins.google.gms.google.services)
     kotlin("plugin.serialization")
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.firebase.crashlytics)
 }
 //ksp {
 //    arg("room.schemaLocation", "$projectDir/schemas") // Опционально: для сохранения схем базы данных
@@ -108,6 +117,8 @@ dependencies {
     //implementation(libs.richeditor.compose)
     // Room
     implementation(libs.androidx.room.runtime)
+    implementation(libs.firebase.crashlytics.ktx)
+    implementation(libs.firebase.analytics.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.room.ktx)
 
@@ -119,18 +130,18 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    implementation("com.darkrockstudios:mpfilepicker:3.1.0")
+    implementation(libs.mpfilepicker)
     implementation(libs.play.services.location)
 
-    val ktor_version = "3.0.1"
-    implementation("io.ktor:ktor-client-logging:$ktor_version") // Для логов
+
+    implementation(libs.ktor.client.logging) // Для логов
 
     implementation(libs.unboundid.ldapsdk)
 
 
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
 //    implementation("io.ktor:ktor-client-core:2.3.2")
 //    implementation("io.ktor:ktor-client-okhttp:2.3.2") // Для Android (или другой движок, например, CIO)
@@ -138,10 +149,10 @@ dependencies {
 //    implementation("io.ktor:ktor-serialization-gson:2.3.2")
 //    implementation("io.ktor:ktor-client-logging:2.3.2") // Для логов
 
-    implementation("io.ktor:ktor-client-core:3.0.1")
-    implementation("io.ktor:ktor-client-okhttp:3.0.1") // Для Android (или другой движок, например, CIO)
-    implementation("io.ktor:ktor-client-content-negotiation:3.0.1")
-    implementation("io.ktor:ktor-serialization-gson:3.0.1")
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp) // Для Android (или другой движок, например, CIO)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.gson)
 
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
     implementation("io.ktor:ktor-client-serialization:3.0.1")
@@ -168,6 +179,16 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+//kotlin {
+//    androidTarget {
+//        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+//        compilerOptions {
+//            jvmTarget.set(JvmTarget.JVM_11)
+//        }
+//    }
+//}
+
 fun versionCodeDate(): Int {
     val dateFormat = SimpleDateFormat("yyMMdd")
     return dateFormat.format(Date()).toInt()

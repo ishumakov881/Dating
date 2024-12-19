@@ -30,7 +30,12 @@ fun AppNavigation() {
         composable(route = "login") {
             LoginScreen(navController = navController)
         }
-        composable(route = "form") {
+        composable(route = "form/{taskId}") { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId")
+            FormScreen(navController = navController, taskId ?: "")
+        }
+
+        composable(route = "form") { backStackEntry ->
             FormScreen(navController = navController)
         }
 

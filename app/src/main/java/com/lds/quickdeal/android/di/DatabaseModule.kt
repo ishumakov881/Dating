@@ -2,6 +2,7 @@ package com.lds.quickdeal.android.di
 
 import android.content.Context
 import androidx.room.Room
+import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.db.AppDatabase
 import com.lds.quickdeal.android.db.TaskDao
 import dagger.Module
@@ -20,9 +21,7 @@ object DatabaseModule {
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return Room.databaseBuilder(
             context,
-            AppDatabase::class.java,
-            "task_database"
-        ).build()
+            AppDatabase::class.java, Const.DB_NAME).build()
     }
 
     @Provides

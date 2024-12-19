@@ -1,5 +1,6 @@
 package com.lds.quickdeal.megaplan.entity
 
+import com.lds.quickdeal.android.entity.TaskStatus
 import com.lds.quickdeal.megaplan.response.AttachesInfo
 import com.lds.quickdeal.megaplan.response.Bonus
 import com.lds.quickdeal.megaplan.response.Comment
@@ -27,8 +28,11 @@ import kotlinx.serialization.Serializable
 data class TaskResponse(
 
 
-    @SerialName("synced") val synced: String? = null,
-    val megaplanId: String? = null,
+    @SerialName("synced")
+    val synced: String? = null,
+
+    @SerialName("megaplanId")
+    val megaplanId: String = "",
 
     val name: String,
     val subject: String,
@@ -164,7 +168,18 @@ data class TaskResponse(
 //    val todosCount: Int? = null,
 //    val actualTodosCount: Int? = null,
 //    val finishedTodosCount: Int? = null
-)
+) {
+
+
+
+    fun getStatus(): TaskStatus {
+        var completed = !this.synced.isNullOrEmpty() && !this.megaplanId.isNullOrEmpty()
+        println("COMPLETED ?? $completed")
+        //@@@@
+        //return TaskStatus.COMPLETED
+        return TaskStatus.COMPLETED
+    }
+}
 
 @Serializable
 data class Responsible(

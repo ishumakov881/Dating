@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lds.quickdeal.android.db.TaskDao
-import com.lds.quickdeal.android.entity.Task
+import com.lds.quickdeal.android.entity.UploaderTask
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -15,8 +15,8 @@ import javax.inject.Inject
 class TaskListViewModel @Inject constructor(
     private val taskDao: TaskDao
 ) : ViewModel() {
-    private val _tasks = MutableLiveData<List<Task>>()
-    val tasks: LiveData<List<Task>> get() = _tasks
+    private val _tasks = MutableLiveData<List<UploaderTask>>()
+    val tasks: LiveData<List<UploaderTask>> get() = _tasks
 
     init {
         loadTasks()
@@ -33,5 +33,22 @@ class TaskListViewModel @Inject constructor(
             taskDao.deleteAllTasks()
             _tasks.value = emptyList() // Обновляем список задач
         }
+    }
+
+    fun sortTasks(selectedSortField: String) {
+        _tasks.value = _tasks.value?.sortedWith(
+            when (selectedSortField) {
+                "name" -> compareBy { it.name }
+                "subject" -> compareBy { it.subject }
+                "createdAt" -> compareBy { it.createdAt }
+                else -> compareBy { it.id }
+            }
+        )
+    }
+
+    fun filterTasksByStatus(b: Boolean) {
+        _tasks.value = _tasks.value?.sortedWith(
+            compareBy { it.status }
+        )
     }
 }

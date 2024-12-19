@@ -7,7 +7,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +42,9 @@ fun TaskListScreen(
     val tasks by viewModel.tasks.observeAsState(emptyList())
     var showDialog by remember { mutableStateOf(false) }
 
+    var showSortMenu by remember { mutableStateOf(false) } // Состояние для меню сортировки
+    var selectedSortField by remember { mutableStateOf("createdAt") } // Поле для сортировки
+
     // Состояние для текста диалога
     var dialogMessage by remember { mutableStateOf("Вы уверены, что хотите очистить все задачи?") }
 
@@ -47,9 +53,82 @@ fun TaskListScreen(
             TopAppBar(
                 title = { Text("Список задач") },
                 actions = {
-                    // Кнопка для очистки базы
+
+                    //FILTER
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(imageVector = Icons.Default.Sort, contentDescription = "Сортировать")
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            onClick = {
+                                selectedSortField = "createdAt"
+                                showSortMenu = false
+                                viewModel.sortTasks(selectedSortField)
+                            },
+                            text = { Text("По дате создания") }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                selectedSortField = "name"
+                                showSortMenu = false
+                                viewModel.sortTasks(selectedSortField)
+                            },
+                            text = { Text("По теме") }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                selectedSortField = "subject"
+                                showSortMenu = false
+                                viewModel.sortTasks(selectedSortField)
+                            },
+                            text = { Text("По содержимому") }
+                        )
+
+
+                        //|++++++++++++++++++
+//                        DropdownMenuItem(
+//                            onClick = {
+//                                viewModel.filterTasksByStatus(true)
+//                                showSortMenu = false
+//                            },
+//                            text = { Text("Выполненные") }
+//                        )
+//                        DropdownMenuItem(
+//                            onClick = {
+//                                viewModel.filterTasksByStatus(false)
+//                                showSortMenu = false
+//                            },
+//                            text = { Text("Невыполненные") }
+//                        )
+//                        DropdownMenuItem(
+//                            onClick = {
+//                                viewModel.filterTasksByUrgency(true)
+//                                showSortMenu = false
+//                            },
+//                            text = { Text("Срочные") }
+//                        )
+//                        DropdownMenuItem(
+//                            onClick = {
+//                                viewModel.filterTasksByUrgency(false)
+//                                showSortMenu = false
+//                            },
+//                            text = { Text("Несрочные") }
+//                        )
+                        //|++++++++++++++++++
+
+
+                    }
+                    //END_FILTER
+
+
                     IconButton(onClick = { showDialog = true }) {
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Очистить базу")
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Очистить базу"
+                        )
                     }
                 }
             )
@@ -97,7 +176,7 @@ fun TaskListScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(tasks) { task ->
-                    TaskItem(task)
+                    TaskItem(navController, task)
                 }
             }
         }
