@@ -18,11 +18,11 @@ class TaskListViewModel @Inject constructor(
     private val _tasks = MutableLiveData<List<UploaderTask>>()
     val tasks: LiveData<List<UploaderTask>> get() = _tasks
 
-    init {
-        loadTasks()
-    }
+//    init {
+//        loadTasks()
+//    }
 
-    private fun loadTasks() {
+    fun loadTasks() {
         viewModelScope.launch {
             _tasks.value = taskDao.getAllTasks()
         }
@@ -41,7 +41,7 @@ class TaskListViewModel @Inject constructor(
                 "name" -> compareBy { it.name }
                 "subject" -> compareBy { it.subject }
                 "createdAt" -> compareBy { it.createdAt }
-                else -> compareBy { it.id }
+                else -> compareBy { it.megaplanId }
             }
         )
     }
@@ -50,5 +50,13 @@ class TaskListViewModel @Inject constructor(
         _tasks.value = _tasks.value?.sortedWith(
             compareBy { it.status }
         )
+    }
+
+    fun removeItem(currentItem: UploaderTask) {
+        viewModelScope.launch {
+            taskDao.delete(currentItem)
+
+            _tasks.value = _tasks.value?.filter { it._id != currentItem._id }
+        }
     }
 }

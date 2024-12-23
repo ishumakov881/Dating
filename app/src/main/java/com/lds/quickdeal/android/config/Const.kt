@@ -8,24 +8,29 @@ class Const {
         //val API_URL = "https://megaplan.lds.online";
         //var API_TASK = "/api/v3/task"
 
-        val DB_NAME: String = "task_database_1"
+        val DB_NAME: String = "task_database_2"
 
-        val API_URL = "http://10.0.20.179:90";
-        var API_TASK = "/megaplan/task"
+//        Prod Server
+//        val API_URL = "http://10.0.20.179:90";
+//        var API_TASK = "/megaplan/task"
+//
+//        //var API_UPLOAD = "/megaplan/upload"
+//        var API_UPLOAD = "/megaplan/task_v2"
 
-        //var API_UPLOAD = "/megaplan/upload"
-        var API_UPLOAD = "/megaplan/task_v2"
+//        val FILE_KEY = "files"//npm
 
-        val FILE_KEY = "files" //php: files[]
-//        val API_URL = "http://10.0.20.167";
-//        var API_TASK = ""
-//        var API_UPLOAD = ""
 
+        //Local Server
+        val API_URL = "http://10.0.20.167";
+        var API_TASK = ""
+        var API_UPLOAD = ""
+        val FILE_KEY = "files[]" //php: files[]
 
         val PREF_NAME = "auth_prefs"
 
-
         val ldapHost = "ldsi.office.lds.ua"
+
+
         //val ldapHost = "ldsii.office.lds.ua"
 
         val ldapPort = 389 // LDAP

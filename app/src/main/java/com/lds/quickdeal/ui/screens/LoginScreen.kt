@@ -85,11 +85,11 @@ fun LoginScreen(
                 Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
 
 
-                if (BuildConfig.DEBUG) {
-                    navController.navigate("form") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
+//                if (BuildConfig.DEBUG) {
+//                    navController.navigate("form") {
+//                        popUpTo("login") { inclusive = true }
+//                    }
+//                }
 
             }) { successMsg ->
                 isLoading = false
@@ -103,6 +103,11 @@ fun LoginScreen(
         }
     }
 
+//    LaunchedEffect(...) {
+//        if (....) {
+//        Toast.makeText(context, "@@@@@@", Toast.LENGTH_SHORT).show()
+//    }
+//    }
 
 //    LaunchedEffect(viewModel.accessToken) {
 //        if (!viewModel.accessToken.isNullOrEmpty()) {

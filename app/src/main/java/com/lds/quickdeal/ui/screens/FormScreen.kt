@@ -119,7 +119,7 @@ lateinit var fusedLocationClient: FusedLocationProviderClient
 @Composable
 fun FormScreen(
     navController: NavController,
-    taskId: String = "",
+    _taskId: String = "",
     viewModel: TaskViewModel = hiltViewModel()
 ) {
 
@@ -129,8 +129,8 @@ fun FormScreen(
             TaskStatus.NONE, "", "", ""
         )
     )
-    LaunchedEffect(taskId) {
-        viewModel.setTaskForEditing(taskId)
+    LaunchedEffect(_taskId) {
+        viewModel.setTaskForEditing(_taskId)
     }
 
 
@@ -392,7 +392,7 @@ fun FormScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = if (taskId.isEmpty()) "Создать заявку" else "Заявка №${currentTask?.megaplanId}"
+                            text = if (currentTask.isNewTask()) "Создать заявку" else "Заявка №${currentTask?.megaplanId}"
                         )
                     },
                     actions = {
@@ -401,7 +401,7 @@ fun FormScreen(
 //                }) {
 //                    Icon(painter = icon, contentDescription = "Настройки")
 //                }
-                        if (taskId.isEmpty()) {
+                        if (currentTask.isNewTask()) {
                             IconButton(onClick = {
                                 navController.navigate("tasks") // Переход на экран созданных задач
                             }) {
@@ -437,7 +437,7 @@ fun FormScreen(
                             )
                         }
 
-                        if (taskId.isEmpty()) {
+                        if (currentTask.isNewTask()) {
                             LogoutButton(navController, context)
                         }
 
@@ -812,10 +812,14 @@ fun FormScreen(
                                 selectedFilesUris,
                                 photoUri,
                                 shareVideo,
+
                                 { taskResponse ->
                                     isLoading = false
-                                    Toast.makeText(context, "Задача добавлена!", Toast.LENGTH_SHORT)
-                                        .show()
+                                    if (currentTask.megaplanId.isEmpty()) {
+                                        Toast.makeText(context, "Задача добавлена!", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Задача обновлена!", Toast.LENGTH_SHORT).show()
+                                    }
                                 },
                                 { err ->
                                     isLoading = false

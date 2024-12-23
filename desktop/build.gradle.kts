@@ -22,4 +22,6 @@ dependencies{
 
     implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
     implementation("io.ktor:ktor-client-serialization:3.0.1")
+
+    implementation("com.unboundid:unboundid-ldapsdk:6.0.6")
 }

@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "tasks")
 data class UploaderTask(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey(autoGenerate = true) var _id: Long = 0,
     @ColumnInfo(name = "name") var name: String,
     @ColumnInfo(name = "subject") var subject: String,
     @ColumnInfo(name = "is_urgent") val isUrgent: Boolean,
@@ -19,4 +19,8 @@ data class UploaderTask(
     @ColumnInfo(name = "updatedAt") val updatedAt: String,
     @ColumnInfo(name = "megaplanId") val megaplanId: String
 
-)
+) {
+    fun isNewTask(): Boolean {
+        return _id <= 0
+    }
+}

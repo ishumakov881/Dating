@@ -91,7 +91,13 @@ class AuthViewModel
                     }
 
 
-                    val connection = LDAPConnection(Const.ldapHost, Const.ldapPort)
+                    //v1
+                    //val connection = LDAPConnection(Const.ldapHost, Const.ldapPort)
+
+                    //val connection = LDAPConnection("office.lds.ua", 389)
+                    val connection = LDAPConnection("aragorn.office.lds.ua", 389)
+
+
                     var authzID: String? = null
 
 //                val mod = Modification(
@@ -142,6 +148,13 @@ class AuthViewModel
 //                    authzID = authzIdentityResponse.authorizationID
 //                }
                     ///00000000000000000
+
+
+//                    val baseDN = "dc=office,dc=lds,dc=ua"
+//                    val userDN = "uid=$username,$baseDN"
+
+                    // Пробуем выполнить bind (аутентификацию) с переданными данными
+                    //connection.bind(userDN, password)
 
                     connection.bind(Const.domain + "\\$username", password)
 //                val searchRequest = SearchRequest(

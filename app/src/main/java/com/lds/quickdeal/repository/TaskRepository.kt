@@ -68,9 +68,11 @@ class TaskRepository @Inject constructor(
 //        return taskCreate(taskRequest, selectedFiles, photoUri, shareVideo)
 //    }
 
-    suspend fun createTask(
+    suspend fun createOrUpdateTask(
         taskRequest: TaskRequest,
-        selectedFiles: List<MPFile<Any>>?, photoUri: Uri?, shareVideo: Uri?
+        taskId: Long,
+        selectedFiles: List<MPFile<Any>>?, photoUri: Uri?,
+        shareVideo: Uri?
 
     ): Result<TaskResponse> {
 
@@ -382,6 +384,9 @@ class TaskRepository @Inject constructor(
                     //Oleg server
                     val taskResponse: TaskResponse = response.body()
 
+                    println("@Request megaplanId: ${taskRequest.megaplanId}")
+
+
                     println("@@@@@@@@@@@@@@@ ${taskResponse.synced}  ${taskResponse.megaplanId}")
                     println("@@@@@@@@@@@@@@@ ${taskResponse.name}  ${taskResponse.subject}")
 
@@ -390,7 +395,6 @@ class TaskRepository @Inject constructor(
                     val createAtNow = TimeUtils.nowTimeFormatted()
 
                     val task = UploaderTask(
-                        //id = taskResponse.meta.status.toString(),
                         name = taskRequest.name,
                         subject = taskRequest.subject,
                         isUrgent = false,//????????????????
@@ -398,11 +402,19 @@ class TaskRepository @Inject constructor(
                         ,
                         createdAt = taskResponse.createdAt ?: createAtNow,
                         updatedAt = taskResponse.updatedAt ?: createAtNow,
-                        megaplanId = taskResponse.megaplanId
-                            ?: "" // предполагаем, что ID задачи приходит с сервера
+                        megaplanId = taskResponse.megaplanId ?: "" // предполагаем, что ID задачи приходит с сервера
                     )
 
-                    taskDao.insert(task)
+
+                    if(taskRequest.megaplanId.isEmpty()){
+                        taskDao.insert(task)
+                    }else{
+                        task._id = taskId
+                        taskDao.update(task)
+                        println("isnew-> ${taskRequest.name} ${task._id} ${task.megaplanId}")
+                        //taskDao.updateByMegaplanId(taskRequest.megaplanId, taskRequest.name,taskRequest.subject)
+                        //taskDao.updateById(..., taskRequest.name,taskRequest.subject)
+                    }
                     Result.success(taskResponse)
 
 

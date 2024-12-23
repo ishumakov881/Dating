@@ -83,6 +83,7 @@ class TaskViewModel
         selectedFiles: List<MPFile<Any>>?,
         photoUri: Uri?,
         shareVideo: Uri?,
+
         onSuccess: (TaskResponse) -> Unit,
         onError: (String) -> Unit
 
@@ -90,8 +91,8 @@ class TaskViewModel
         taskJob = viewModelScope.launch {
             try {
                 _isTaskRunning.postValue(true)
-                val response = taskRepository.createTask(
-                    taskRequest, selectedFiles, photoUri, shareVideo
+                val response = taskRepository.createOrUpdateTask(
+                    taskRequest, _currentTask.value!!._id, selectedFiles, photoUri, shareVideo
                 )
                 if (response.isSuccess) {
                     val taskResponse = response.getOrThrow()
