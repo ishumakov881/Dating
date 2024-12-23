@@ -23,15 +23,20 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,10 +55,54 @@ import androidx.navigation.NavController
 import com.lds.quickdeal.android.entity.TaskStatus
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TimeUtils
+import com.lds.quickdeal.ui.screens.DismissBackground
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TaskItem(
+    navController: NavController,
+    task: UploaderTask,
+    modifier: Modifier = Modifier,
+    onRemove: (UploaderTask) -> Unit
+) {
+
+    val context = LocalContext.current
+    val currentItem by rememberUpdatedState(task)
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = {
+            when(it) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onRemove(currentItem)
+                    Toast.makeText(context, "Задача удалена", Toast.LENGTH_SHORT).show()
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onRemove(currentItem)
+                    Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
+                }
+                SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
+            }
+            return@rememberSwipeToDismissBoxState true
+        },
+        // positional threshold of 25%
+        positionalThreshold = { it * .25f }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        backgroundContent = { DismissBackground(dismissState)},
+        content = {
+            TaskCard(navController, task)
+        })
+}
+
 
 
 @Composable
-fun TaskItem(navController: NavController, task: UploaderTask) {
+fun TaskCard(
+    navController: NavController,
+    task: UploaderTask
+) {
 
     var context = LocalContext.current
 
@@ -62,7 +111,7 @@ fun TaskItem(navController: NavController, task: UploaderTask) {
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .clickable {
-                navController.navigate("form/${task.id}")
+                navController.navigate("form/${task._id}")
             },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
@@ -73,8 +122,6 @@ fun TaskItem(navController: NavController, task: UploaderTask) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-
-
                     text = buildAnnotatedString {
                         append(task.name)
                         if (task.megaplanId.isNotEmpty()) {
@@ -238,15 +285,12 @@ fun TaskItem(navController: NavController, task: UploaderTask) {
 }
 
 
-fun updateDescription(s: String) {
-
-}
-
 fun openMegaplanApp(context: Context, megaplanId: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse("megaplan://megaplan/task/$megaplanId/card/")
             `package` = "ru.megaplan.megaplan3app"
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     } catch (e: Exception) {
@@ -258,6 +302,7 @@ fun openMegaplanWeb(context: Context, megaplanId: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse("https://megaplan.lds.online/card/$megaplanId")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     } catch (e: Exception) {
