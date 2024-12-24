@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -29,8 +30,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,28 +68,72 @@ fun TaskItem(
 
     val context = LocalContext.current
     val currentItem by rememberUpdatedState(task)
+    var showDialog by remember { mutableStateOf(false) }
+
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
-            when(it) {
+            when (it) {
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    onRemove(currentItem)
-                    Toast.makeText(context, "Задача удалена", Toast.LENGTH_SHORT).show()
+                    showDialog = true
                 }
+
                 SwipeToDismissBoxValue.EndToStart -> {
-                    onRemove(currentItem)
-                    Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
+//                    onRemove(currentItem)
+//                    Toast.makeText(context, "Item archived", Toast.LENGTH_SHORT).show()
+                    showDialog = true
                 }
-                SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState false
+
+                SwipeToDismissBoxValue.Settled -> return@rememberSwipeToDismissBoxState true
             }
             return@rememberSwipeToDismissBoxState true
         },
         // positional threshold of 25%
         positionalThreshold = { it * .25f }
     )
+
+
+
+
+
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Удалить задачу?") },
+            text = { Text("Вы уверены, что хотите удалить эту задачу?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRemove(currentItem)  // Удаление задачи
+                        showDialog = false
+                        Toast.makeText(context, "Задача удалена", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Text("Удалить")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDialog = false
+                    }
+                ) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
+    LaunchedEffect(showDialog) {
+        if (!showDialog) {
+            dismissState.reset()  // Вызываем reset внутри LaunchedEffect
+        }
+    }
+
     SwipeToDismissBox(
         state = dismissState,
         modifier = modifier,
-        backgroundContent = { DismissBackground(dismissState)},
+        backgroundContent = { DismissBackground(dismissState) },
         content = {
             TaskCard(navController, task)
         })

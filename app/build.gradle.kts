@@ -1,3 +1,4 @@
+import org.gradle.internal.impldep.com.amazonaws.services.s3.transfer.Upload
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.text.SimpleDateFormat
@@ -7,8 +8,9 @@ import org.gradle.kotlin.dsl.implementation
 
 //import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.plugin.KotlinTargetHierarchy.SourceSetTree.Companion.main
 
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import java.util.*
 
 plugins {
     alias(libs.plugins.android.application)
@@ -42,6 +44,8 @@ android {
 
     val code = versionCodeDate()
 
+    println("VersionCode: $code")
+
     val username = getConfigValue("ACTIVE_DIRECTORY_USERNAME", "")
     val password = getConfigValue("ACTIVE_DIRECTORY_PASSWORD", "")
 
@@ -58,7 +62,56 @@ android {
 //        buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"${System.getenv("ACTIVE_DIRECTORY_USERNAME") ?: ""}\"")
 //        buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"${System.getenv("ACTIVE_DIRECTORY_PASSWORD") ?: ""}\"")
 
+        //setProperty("archivesBaseName", "QuickDeal-$versionName")
+        setProperty("archivesBaseName", "QuickDeal-$versionName")
+
     }
+
+    val outputDirectory = file("C:/build")
+
+    tasks.register<Copy>("copyAabToBuildFolder") {
+        println("mmmmmmmmmmmmmmmmm" + "$buildDir/outputs/bundle/release")
+
+        if (!outputDirectory.exists()) {
+            outputDirectory.mkdirs()
+        }
+
+        from("$buildDir/outputs/bundle/release") {
+            include("*.aab", "*.apk")
+        }
+        from("$buildDir/outputs/apk/release") {
+            include("*.aab", "*.apk")
+        }
+        into(outputDirectory)
+    }
+
+    tasks.register("generateVersionInfo") {
+        doLast {
+            val versionInfoFile = file("$outputDirectory/version.json")
+            versionInfoFile.parentFile.mkdirs()
+
+            val versionInfo = mapOf(
+                "applicationId" to defaultConfig.applicationId,
+                "versionCode" to defaultConfig.versionCode,
+                "versionName" to defaultConfig.versionName,
+                "buildTime" to Date().toString()
+            )
+
+            versionInfoFile.writeText(
+                com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(versionInfo)
+            )
+        }
+    }
+
+    tasks.named("assemble") {
+        finalizedBy("generateVersionInfo", "copyAabToBuildFolder")
+    }
+
+
+
+    apply(from = "../copyReports.gradle.kts")
+
+
 
     signingConfigs {
         create("config") {
@@ -115,6 +168,9 @@ kapt {
 
 dependencies {
 
+
+    implementation("com.github.ygorluizfrazao.compose-audio-controls:audio-services:v1.0.0-alpha03")
+    implementation("com.github.ygorluizfrazao.compose-audio-controls:ui:v1.0.0-alpha03")
     //implementation(libs.richeditor.compose)
     // Room
     implementation(libs.androidx.room.runtime)
@@ -176,7 +232,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     //implementation ("com.google.accompanist:accompanist-swipetodismiss:0.31.2-alpha")
-
+    //noinspection UseTomlInstead
+    implementation("com.github.SirLordPouya.AndroidAppUpdater:compose:10.0.0")
 }
 java {
     toolchain {

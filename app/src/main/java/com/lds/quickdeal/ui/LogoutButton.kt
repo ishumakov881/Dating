@@ -14,7 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
-import com.lds.quickdeal.ui.screens.logout
+import com.lds.quickdeal.ui.form.logout
 
 @Composable
 fun LogoutButton(navController: NavController, context: Context) {

@@ -1,7 +1,8 @@
-package com.lds.quickdeal.ui.screens
+package com.lds.quickdeal.ui.form
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -45,6 +47,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -64,6 +67,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,6 +76,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import br.com.frazo.ui.compose.materialv3.AudioRecorder
+import br.com.frazo.ui.visualizer.MirrorWaveRecordingVisualizer
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -251,7 +257,7 @@ fun FormScreen(
     val videoCaptureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
+        if (result.resultCode == Activity.RESULT_OK) {
             val videoUri: Uri? = result.data?.data
             videoUri?.let {
                 // Здесь обрабатываем URI видео, например, показываем Toast
@@ -386,10 +392,22 @@ fun FormScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top
             ) {
-                // Добавление тулбара с кнопкой перехода на экран настроек
-
-
                 TopAppBar(
+
+                    navigationIcon = if (!currentTask.isNewTask()) {
+                        {
+                            IconButton(onClick = {
+                                navController.popBackStack()
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Закрыть"
+                                )
+                            }
+                        }
+                    } else ({
+                    }),
+
                     title = {
                         Text(
                             text = if (currentTask.isNewTask()) "Создать заявку" else "Заявка №${currentTask?.megaplanId}"
@@ -401,6 +419,8 @@ fun FormScreen(
 //                }) {
 //                    Icon(painter = icon, contentDescription = "Настройки")
 //                }
+
+
                         if (currentTask.isNewTask()) {
                             IconButton(onClick = {
                                 navController.navigate("tasks") // Переход на экран созданных задач
@@ -446,114 +466,8 @@ fun FormScreen(
 
 
                 //MAIN CONTAINER
-                OutlinedTextField(
-                    value = currentTask!!.name,
-                    onValueChange = { newName -> viewModel.updateTaskName(newName) },
-                    label = { Text("Тема") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-
-                val FORM_PRESETS = listOf(
-                    "Очистить содержимое" to { viewModel.updateDescription("") },
-                    "Добавить стандартное приветствие" to { viewModel.appendDescription("\nЗдравствуйте! \n") },
-                    "Добавить текущее время" to { viewModel.appendDescription("\n${getCurrentTime()}") },
-                    //"Добавить шаблон заголовка" to { description += "\n### Заголовок\n" },
-                    "Добавить разделитель" to { viewModel.appendDescription("\n---\n") },
-
-
-                    //"Добавить приоритет задачи" to { description += "\n**Приоритет:** Высокий\n" },
-                    "Добавить приоритет задачи" to {},
-
-
-                    "Добавить дедлайн" to { viewModel.appendDescription("\n**Дедлайн:** 31.12.2024\n") },
-                    "Добавить список подзадач" to { viewModel.appendDescription("\n- Подзадача 1\n- Подзадача 2\n- Подзадача 3\n") },
-                    //"Добавить описание бизнес-цели" to { description += "\n**Цель:** Увеличить производительность команды.\n" },
-
-                    "Добавить шаблон задачи по проекту" to { viewModel.appendDescription("\n**Проект:** Разработка нового продукта\n**Этап:** Исследование\n") },
-//                    "Добавить задачи по обучению" to { description += "\n- Прохождение курса по улучшению навыков общения\n- Обучение использованию новых инструментов\n" },
-//                    "Добавить статус задачи" to { description += "\n**Статус:** В процессе\n" },
-//                    "Добавить шаблон фидбека" to { description += "\n**Фидбек:** Прекрасно выполнена работа, нужно улучшить коммуникацию.\n" }
-                )
-
-                //DESCRIPTION
-
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-
-
-                    OutlinedTextField(
-                        value = currentTask!!.subject,
-                        onValueChange = { viewModel.updateDescription(it) },
-                        label = { Text("Содержание") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 8.dp),
-                        minLines = 8,
-                        singleLine = false
-                    )
-
-
-                    // Кнопка с меню пресетов
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd) // Размещение кнопки справа
-                            .padding(top = 8.dp)
-                    ) {
-                        var menuExpanded by remember { mutableStateOf(false) }
-
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Меню пресетов"
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            FORM_PRESETS.forEach { (title, action) ->
-                                if (title == "Добавить приоритет задачи") {
-                                    // Подменю для приоритета задачи
-                                    var priorityMenuExpanded by remember { mutableStateOf(false) }
-                                    DropdownMenuItem(
-                                        text = { Text(title) },
-                                        onClick = { priorityMenuExpanded = !priorityMenuExpanded }
-                                    )
-                                    if (priorityMenuExpanded) {
-                                        // Подменю для выбора приоритета задачи
-                                        listOf("Высокий", "Средний", "Низкий").forEach { priority ->
-                                            DropdownMenuItem(
-                                                text = { Text(priority) },
-                                                onClick = {
-                                                    viewModel.appendDescription("\n**Приоритет:** $priority\n")
-                                                    priorityMenuExpanded = false
-                                                    menuExpanded = false
-                                                    //Toast.makeText(context, "Приоритет: $priority", Toast.LENGTH_SHORT).show()
-                                                }
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    DropdownMenuItem(
-                                        text = { Text(title) },
-                                        onClick = {
-                                            action()
-                                            menuExpanded = false
-                                            //Toast.makeText(context, title, Toast.LENGTH_SHORT).show()
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                //END_DESCRIPTION
+                TitileWithPresetes(currentTask, viewModel)
+                DescriptionWithPresets(currentTask, viewModel)
 
 
                 //=========================
@@ -742,6 +656,36 @@ fun FormScreen(
                     }
                 }
 
+//                AudioRecorder(
+//                    modifier = Modifier.padding(horizontal = 12.dp),
+//                    recordIcon = {
+//                        //Compose your icon
+//                    },
+//                    stopIcon = {
+//                        //Compose your icon
+//                    },
+//
+//                    onRecordRequested = viewModel.startRecordingAudioNote(), // that will call the viewmodel `startRecordingAudioNote` method.
+//                    onStopRequested = onAudioRecordStopRequested, // that will call the viewmodel `stopRecordingAudio` method.
+//                    audioRecordingData = audioRecordingData,
+//                    recordingWaveVisualizer = MirrorWaveRecordingVisualizer(
+//                        wavePaint = Paint().apply {
+//                            color = LocalContentColor.current.toArgb()
+//                            strokeWidth = 2f
+//                            style = Paint.Style.STROKE
+//                            strokeCap = Paint.Cap.ROUND
+//                            flags = Paint.ANTI_ALIAS_FLAG
+//                            strokeJoin = Paint.Join.BEVEL
+//                        },
+//                        middleLinePaint = Paint().apply {
+//                            color = LocalTextSelectionColors.current.handleColor.toArgb()
+//                            style = Paint.Style.FILL_AND_STROKE
+//                            strokeWidth = 2f
+//                            pathEffect =
+//                                DashPathEffect(arrayOf(4f, 4f).toFloatArray(), 0f)
+//                        }
+//                    )
+//                )
 
 //        Button(onClick = { /* Надиктовать текст */ }, modifier = Modifier.padding(top = 8.dp)) {
 //            Text("Надиктовать содержание")
@@ -816,9 +760,17 @@ fun FormScreen(
                                 { taskResponse ->
                                     isLoading = false
                                     if (currentTask.megaplanId.isEmpty()) {
-                                        Toast.makeText(context, "Задача добавлена!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Задача добавлена!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     } else {
-                                        Toast.makeText(context, "Задача обновлена!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Задача обновлена!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 },
                                 { err ->
@@ -869,6 +821,9 @@ fun FormScreen(
 
 }
 
+
+
+
 fun getCurrentTime(): String {
     val currentTime = Calendar.getInstance().time
     val formatter = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
@@ -899,7 +854,7 @@ private fun checkPermissionStatus(context: Context, permission: String): Boolean
 fun createVideoUri(context: Context): Uri? {
     return try {
         val videoName = "video_${System.currentTimeMillis()}.mp4"
-        val contentValues = android.content.ContentValues().apply {
+        val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, videoName)
             put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
             put(MediaStore.Video.Media.RELATIVE_PATH, "Movies")
@@ -924,7 +879,7 @@ fun createImageUri(context: Context): Uri? {
     return try {
         // Создаем имя файла с текущим временем
         val imageName = "photo_${System.currentTimeMillis()}.jpg"
-        val contentValues = android.content.ContentValues().apply {
+        val contentValues = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, imageName)
             put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             put(

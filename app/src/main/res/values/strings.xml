@@ -1,5 +1,12 @@
 <resources>
     <string name="app_name">Быстрое дело</string>
 <!--    <string name="app_name">QuickDeal</string>-->
+    <string name="appupdater_please_wait">Пожалуйста, подождите</string>
+    <string name="appupdater_downloading_new_version">Загрузка новой версии...</string>
+    <string name="appupdater_download_notification_title">Загрузка...</string>
+    <string name="appupdater_download_notification_description">Загрузка новой версии</string>
+    <string name="appupdater_please_install">Пожалуйста, установите</string>
+    <string name="appupdater_or">или</string>
+    <string name="appupdater_download_from_store">Скачать из магазина</string>
 
 </resources>

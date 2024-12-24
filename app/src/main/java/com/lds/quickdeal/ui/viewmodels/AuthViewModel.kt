@@ -92,11 +92,7 @@ class AuthViewModel
 
 
                     //v1
-                    //val connection = LDAPConnection(Const.ldapHost, Const.ldapPort)
-
-                    //val connection = LDAPConnection("office.lds.ua", 389)
-                    val connection = LDAPConnection("aragorn.office.lds.ua", 389)
-
+                    val connection = LDAPConnection(Const.ldapHost, Const.ldapPort)
 
                     var authzID: String? = null
 

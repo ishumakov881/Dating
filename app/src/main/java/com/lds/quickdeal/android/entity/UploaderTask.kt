@@ -17,7 +17,7 @@ data class UploaderTask(
 
     @ColumnInfo(name = "created_ut") val createdAt: String,
     @ColumnInfo(name = "updatedAt") val updatedAt: String,
-    @ColumnInfo(name = "megaplanId") val megaplanId: String
+    @ColumnInfo(name = "megaplanId") var megaplanId: String
 
 ) {
     fun isNewTask(): Boolean {

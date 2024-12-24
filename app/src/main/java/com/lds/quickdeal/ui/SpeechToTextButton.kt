@@ -68,10 +68,10 @@ fun SpeechToTextButton(
     }
 
     // Отображение надиктованного текста
-    if (recognizedText.value.isNotEmpty()) {
-        Text(
-            text = "Распознанный текст: ${recognizedText.value}",
-            modifier = Modifier.padding(top = 16.dp)
-        )
-    }
+//    if (recognizedText.value.isNotEmpty()) {
+//        Text(
+//            text = "Распознанный текст: ${recognizedText.value}",
+//            modifier = Modifier.padding(top = 16.dp)
+//        )
+//    }
 }

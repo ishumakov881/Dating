@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 import androidx.navigation.compose.rememberNavController
-import com.lds.quickdeal.ui.screens.FormScreen
+import com.lds.quickdeal.ui.form.FormScreen
 import com.lds.quickdeal.ui.screens.LoginScreen
 
 import androidx.navigation.compose.NavHost

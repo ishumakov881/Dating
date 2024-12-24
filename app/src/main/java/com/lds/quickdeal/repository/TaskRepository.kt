@@ -154,7 +154,7 @@ class TaskRepository @Inject constructor(
                     MultiPartFormDataContent(
                         formData {
                             appendTaskRequest(context, taskRequest)
-                            append("username", username?:"")
+                            append("username", username ?: "")
                             selectedFiles?.forEach { file ->
                                 val rawUri = file.platformFile.toString()
                                 val uri = Uri.parse(rawUri)
@@ -402,14 +402,16 @@ class TaskRepository @Inject constructor(
                         ,
                         createdAt = taskResponse.createdAt ?: createAtNow,
                         updatedAt = taskResponse.updatedAt ?: createAtNow,
-                        megaplanId = taskResponse.megaplanId ?: "" // предполагаем, что ID задачи приходит с сервера
+                        megaplanId = taskResponse.megaplanId
+                            ?: "" // предполагаем, что ID задачи приходит с сервера
                     )
 
 
-                    if(taskRequest.megaplanId.isEmpty()){
+                    if (taskRequest.megaplanId.isEmpty()) {
                         taskDao.insert(task)
-                    }else{
+                    } else {
                         task._id = taskId
+                        task.megaplanId = taskRequest.megaplanId
                         taskDao.update(task)
                         println("isnew-> ${taskRequest.name} ${task._id} ${task.megaplanId}")
                         //taskDao.updateByMegaplanId(taskRequest.megaplanId, taskRequest.name,taskRequest.subject)
@@ -462,7 +464,7 @@ class TaskRepository @Inject constructor(
             // Обработка остальных исключений
             println("Неизвестная ошибка: ${e.javaClass}: ${e.message}")
             return Result.failure(Exception("Произошла неизвестная ошибка"))
-        }catch (e: OutOfMemoryError) {
+        } catch (e: OutOfMemoryError) {
             println("FileLoad OOM при загрузке файла $e")
             return Result.failure(Exception("Ошибка: недостаточно памяти для обработки файла"))
         }

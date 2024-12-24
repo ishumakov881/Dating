@@ -8,6 +8,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.frazo.audio_services.recorder.AndroidAudioRecorder
+import br.com.frazo.audio_services.recorder.AudioRecorder
+import br.com.frazo.audio_services.recorder.AudioRecordingData
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.db.TaskDao
@@ -18,10 +21,14 @@ import com.lds.quickdeal.megaplan.entity.TaskResponse
 import com.lds.quickdeal.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -34,6 +41,18 @@ class TaskViewModel
     private val context: Context,
     private val taskDao: TaskDao
 ) : ViewModel() {
+
+
+    enum class AudioNoteStatus {
+        HAVE_TO_RECORD, CAN_PLAY
+    }
+    //initialize states and variables
+    private var _audioRecordFlow = MutableStateFlow<List<AudioRecordingData>>(emptyList())
+    val audioRecordFlow = _audioRecordFlow.asStateFlow()
+    private var currentAudioFile: File? = null
+    private var _audioNoteStatus = MutableStateFlow(AudioNoteStatus.HAVE_TO_RECORD)
+    val audioStatus = _audioNoteStatus.asStateFlow()
+
 
     // Объект текущей задачи
     private val _currentTask = MutableLiveData<UploaderTask>()
@@ -59,6 +78,17 @@ class TaskViewModel
     fun appendDescription(s: String) {
         val task = _currentTask.value ?: createEmptyTask()
         _currentTask.value = task.copy(subject = task.subject + s)
+    }
+
+
+    fun updateTitle(s: String) {
+        val task = _currentTask.value ?: createEmptyTask()
+        _currentTask.value = task.copy(name = s)
+    }
+
+    fun appendTitle(s: String) {
+        val task = _currentTask.value ?: createEmptyTask()
+        _currentTask.value = task.copy(name = task.name + s)
     }
 
     fun updateTaskName(newName: String) {
@@ -139,7 +169,8 @@ class TaskViewModel
     }
 
     private fun createEmptyTask(): UploaderTask {
-        val currentDateTime = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val currentDateTime =
+            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return UploaderTask(
             name = "Задача $currentDateTime",
             subject = if (BuildConfig.DEBUG) "Test Description" else "",
@@ -150,4 +181,44 @@ class TaskViewModel
         )
     }
 
+
+
+
+
+    //recorder
+    //After you got the permission and the user clicks the record button, onRecordRequested is called...
+//    fun startRecordingAudioNote(audioDirectory: File) {
+//
+//        var audioRecorder : AndroidAudioRecorder = AndroidAudioRecorder(context)
+//
+//
+//        viewModelScope.launch {
+//            _audioRecordFlow.value = emptyList()
+//            currentAudioFile?.delete()
+//            currentAudioFile = File(audioDirectory, UUID.randomUUID().toString())
+//            currentAudioFile?.let { fileOutput ->
+//                val flow =
+//                    audioRecorder.startRecording(fileOutput)
+//                flow.catch {
+//                    audioRecorder.stopRecording()
+//                    fileOutput.delete()
+//                    currentAudioFile = null
+//                    //Do something with the error
+//                }
+//                    .collectLatest {
+//                        if (_audioRecordFlow.value.size >= 1000)
+//                            _audioRecordFlow.value =
+//                                _audioRecordFlow.value - _audioRecordFlow.value.first()
+//                        _audioRecordFlow.value = _audioRecordFlow.value + it
+//                    }
+//            }
+//        }
+//    }
+
+//    fun stopRecordingAudio() {
+//        audioRecorder.stopRecording()
+//        currentAudioFile?.let {
+//            _audioNoteStatus.value = AudioNoteStatus.CAN_PLAY
+//        }
+//    }
 }
