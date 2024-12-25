@@ -12,7 +12,6 @@ class Const {
         //val APK_UPDATE_URL = "http://10.0.20.167/release.apk"
 
 
-
         //val API_URL = "https://megaplan.lds.online";
         //var API_TASK = "/api/v3/task"
 
