@@ -81,7 +81,7 @@ android {
 //        buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"${System.getenv("ACTIVE_DIRECTORY_PASSWORD") ?: ""}\"")
 
         //setProperty("archivesBaseName", "QuickDeal-$_versionName")
-        setProperty("archivesBaseName", _versionName)
+        setProperty("archivesBaseName", "QuickDeal-$_versionName")
 
     }
 
@@ -152,7 +152,7 @@ android {
 
         getByName("release") {
             versionNameSuffix = ".release"
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -204,7 +204,7 @@ dependencies {
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.material.icons.extended)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation(libs.mpfilepicker)
     implementation(libs.play.services.location)
 
