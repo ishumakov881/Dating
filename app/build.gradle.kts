@@ -41,7 +41,7 @@ fun getConfigValue(key: String, defaultValue: String): String {
 
 val majorVersion = 1
 val minorVersion = 3
-val patchVersion = 33
+val patchVersion = 34
 //val versionSuffix = "beta.1"
 val versionSuffix = ""//"" для стабильной версии
 

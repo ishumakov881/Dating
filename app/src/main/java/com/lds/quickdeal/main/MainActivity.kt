@@ -20,6 +20,7 @@ import com.lds.appupdater.AppUpdater.Companion.checkAppVersion
 import com.lds.appupdater.AppUpdater.Companion.getCurrentAppVersionCode
 import com.lds.appupdater.AppUpdater.Companion.isNewVersionAvailable
 import com.lds.quickdeal.R
+import com.lds.quickdeal.android.config.Const.Companion.FDROID_URL
 
 import com.lds.quickdeal.navigation.AppNavigation
 
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 var context: Context = LocalContext.current
                 var isUpdateDialogVisible by remember { mutableStateOf(false) }
-                var storeListItems = listOf(
+                val storeListItems = listOf(
 
 //                    StoreListItem(
 //                        store = Store.DIRECT_URL,
@@ -76,7 +77,7 @@ class MainActivity : ComponentActivity() {
                         title = "Обновить",
                         packageName = packageName,
                         icon = com.pouyaheydari.appupdater.core.R.drawable.appupdater_ic_fdroid,
-                        url = "https://fdroid.lds.online",
+                        url = FDROID_URL,
                     ),
                 )
                 LaunchedEffect(Unit) {

@@ -5,7 +5,9 @@ import kotlinx.serialization.Serializable
 class Const {
     companion object {
 
-        val FDROID_URL = "https://fdroid.lds.online/repo/index-v1.json"
+        const val FDROID_URL = "https://fdroid.lds.online"
+        const val FDROID_URL_INDEX = "$FDROID_URL/repo/index-v1.json"
+
 
         //Update App Feature
         //val UPDATE_SERVER_URL = "http://10.0.20.167"
@@ -35,7 +37,7 @@ class Const {
 
         val PREF_NAME = "auth_prefs"
 
-//        val ldapHost = "ldsi.office.lds.ua"
+        //        val ldapHost = "ldsi.office.lds.ua"
 //        //val ldapHost = "ldsii.office.lds.ua"
         val ldapHost = "office.lds.ua"//"aragorn.office.lds.ua"
 

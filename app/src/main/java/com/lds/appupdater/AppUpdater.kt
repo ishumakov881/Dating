@@ -59,9 +59,12 @@ class AppUpdater {
 //                val appInfo = appResponse.apps.find { it.packageName == packageName }
 //                appInfo?.suggestedVersionCode?.toInt() ?: -1
 
-                val appResponse: FdroidResponse = client.get(Const.FDROID_URL).body()
-                val appInfo = appResponse.apps.find { it.packageName == packageName }
-                appInfo?.suggestedVersionCode?.toInt() ?: -1
+                val appResponse: FdroidResponse = client.get(Const.FDROID_URL_INDEX).body()
+                val app = appResponse.packages[packageName]
+                println("New $app")
+                app?.maxByOrNull { it.versionCode }?.versionCode ?: -1
+
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 -1
