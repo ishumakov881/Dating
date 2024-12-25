@@ -38,13 +38,30 @@ fun getConfigValue(key: String, defaultValue: String): String {
     return properties.getProperty(key, defaultValue)
 }
 
+
+val majorVersion = 1
+val minorVersion = 3
+val patchVersion = 33
+//val versionSuffix = "beta.1"
+val versionSuffix = ""//"" для стабильной версии
+
+val _versionName = if (versionSuffix.isNotBlank()) {
+    "$majorVersion.$minorVersion.$patchVersion-$versionSuffix"
+} else {
+    "$majorVersion.$minorVersion.$patchVersion"
+}
+
+val _versionCode = majorVersion * 10000 + minorVersion * 100 + patchVersion
+
 android {
     namespace = "com.lds.quickdeal"
     compileSdk = 35
 
-    val code = versionCodeDate()
+//    val code = versionCodeDate()
+//    println("VersionCode: $code")
 
-    println("VersionCode: $code")
+    println("=> $_versionCode $_versionName")
+
 
     val username = getConfigValue("ACTIVE_DIRECTORY_USERNAME", "")
     val password = getConfigValue("ACTIVE_DIRECTORY_PASSWORD", "")
@@ -53,63 +70,64 @@ android {
         applicationId = "com.lds.quickdeal"
         minSdk = 24
         targetSdk = 35
-        versionCode = code
-        versionName = "1.3.$code"
-
+//        versionCode = code
+//        versionName = "1.3.$code"
+        versionCode = _versionCode
+        versionName = _versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
 
 //        buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"${System.getenv("ACTIVE_DIRECTORY_USERNAME") ?: ""}\"")
 //        buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"${System.getenv("ACTIVE_DIRECTORY_PASSWORD") ?: ""}\"")
 
-        //setProperty("archivesBaseName", "QuickDeal-$versionName")
-        setProperty("archivesBaseName", "QuickDeal-$versionName")
+        //setProperty("archivesBaseName", "QuickDeal-$_versionName")
+        setProperty("archivesBaseName", _versionName)
 
     }
 
-    val outputDirectory = file("C:/build")
-
-    tasks.register<Copy>("copyAabToBuildFolder") {
-        println("mmmmmmmmmmmmmmmmm" + "$buildDir/outputs/bundle/release")
-
-        if (!outputDirectory.exists()) {
-            outputDirectory.mkdirs()
-        }
-
-        from("$buildDir/outputs/bundle/release") {
-            include("*.aab", "*.apk")
-        }
-        from("$buildDir/outputs/apk/release") {
-            include("*.aab", "*.apk")
-        }
-        into(outputDirectory)
-    }
-
-    tasks.register("generateVersionInfo") {
-        doLast {
-            val versionInfoFile = file("$outputDirectory/version.json")
-            versionInfoFile.parentFile.mkdirs()
-
-            val versionInfo = mapOf(
-                "applicationId" to defaultConfig.applicationId,
-                "versionCode" to defaultConfig.versionCode,
-                "versionName" to defaultConfig.versionName,
-                "buildTime" to Date().toString()
-            )
-
-            versionInfoFile.writeText(
-                com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(versionInfo)
-            )
-        }
-    }
-
-    tasks.named("assemble") {
-        finalizedBy("generateVersionInfo", "copyAabToBuildFolder")
-    }
-
-
-
-    apply(from = "../copyReports.gradle.kts")
+//    val outputDirectory = file("C:/build")
+//
+//    tasks.register<Copy>("copyAabToBuildFolder") {
+//        println("mmmmmmmmmmmmmmmmm" + "$buildDir/outputs/bundle/release")
+//
+//        if (!outputDirectory.exists()) {
+//            outputDirectory.mkdirs()
+//        }
+//
+//        from("$buildDir/outputs/bundle/release") {
+//            include("*.aab", "*.apk")
+//        }
+//        from("$buildDir/outputs/apk/release") {
+//            include("*.aab", "*.apk")
+//        }
+//        into(outputDirectory)
+//    }
+//
+//    tasks.register("generateVersionInfo") {
+//        doLast {
+//            val versionInfoFile = file("$outputDirectory/version.json")
+//            versionInfoFile.parentFile.mkdirs()
+//
+//            val versionInfo = mapOf(
+//                "applicationId" to defaultConfig.applicationId,
+//                "versionCode" to defaultConfig.versionCode,
+//                "versionName" to defaultConfig.versionName,
+//                "buildTime" to Date().toString()
+//            )
+//
+//            versionInfoFile.writeText(
+//                com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(versionInfo)
+//            )
+//        }
+//    }
+//
+//    tasks.named("assemble") {
+//        finalizedBy("generateVersionInfo", "copyAabToBuildFolder")
+//    }
+//
+//
+//
+//    apply(from = "../copyReports.gradle.kts")
 
 
 
@@ -134,7 +152,7 @@ android {
 
         getByName("release") {
             versionNameSuffix = ".release"
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

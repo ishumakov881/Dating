@@ -1,19 +1,16 @@
 package com.lds.appupdater
 
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
-import androidx.core.content.FileProvider
 import com.lds.quickdeal.BuildConfig
+import com.lds.quickdeal.android.config.Const
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.serialization.gson.gson
-import java.io.File
+import kotlinx.serialization.json.Json
 
 class AppUpdater {
 
@@ -40,6 +37,37 @@ class AppUpdater {
 
         fun isNewVersionAvailable(currentVersionCode: Int, serverVersionCode: Int): Boolean {
             return serverVersionCode > currentVersionCode
+        }
+
+        suspend fun checkAppVersion(context: Context): Int {
+            val packageName = context.packageName
+            val client = HttpClient() {
+                install(ContentNegotiation) {
+                    gson()
+
+//                    json(Json {
+//                        prettyPrint = true
+//                        isLenient = true
+////                        encodeDefaults = true
+////                        ignoreUnknownKeys = true
+//                    })
+                }
+            }
+            return try {
+//                val response: String = client.get(Const.FDROID_URL).bodyAsText()
+//                val appResponse = Json.decodeFromString<FdroidResponse>(response)
+//                val appInfo = appResponse.apps.find { it.packageName == packageName }
+//                appInfo?.suggestedVersionCode?.toInt() ?: -1
+
+                val appResponse: FdroidResponse = client.get(Const.FDROID_URL).body()
+                val appInfo = appResponse.apps.find { it.packageName == packageName }
+                appInfo?.suggestedVersionCode?.toInt() ?: -1
+            } catch (e: Exception) {
+                e.printStackTrace()
+                -1
+            } finally {
+                client.close()
+            }
         }
 
 
@@ -72,23 +100,24 @@ class AppUpdater {
 //            }
 //        }
 
-        suspend fun checkAppVersion(serverUrl: String): AppVersionInfo? {
-            val client = HttpClient() {
-                install(ContentNegotiation) {
-                    gson()
-                }
-            }
-            return try {
-                client.get("$serverUrl/version/version_info.json").body()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                if (BuildConfig.DEBUG) {
-                    println("@@@ " + e.message)
-                }
-                null
-            } finally {
-                client.close()
-            }
-        }
+//        suspend fun checkAppVersion(serverUrl: String): AppVersionInfo? {
+//            val client = HttpClient() {
+//                install(ContentNegotiation) {
+//                    gson()
+//                }
+//            }
+//            return try {
+//                client.get("$serverUrl/version/version_info.json").body()
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                if (BuildConfig.DEBUG) {
+//                    println("@@@ " + e.message)
+//                }
+//                null
+//            } finally {
+//                client.close()
+//            }
+//        }
+//    }
     }
 }

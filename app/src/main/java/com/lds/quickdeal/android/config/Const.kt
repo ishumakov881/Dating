@@ -5,10 +5,11 @@ import kotlinx.serialization.Serializable
 class Const {
     companion object {
 
+        val FDROID_URL = "https://fdroid.lds.online/repo/index-v1.json"
 
         //Update App Feature
-        val UPDATE_SERVER_URL = "http://10.0.20.167"
-        val APK_UPDATE_URL = "http://10.0.20.167/release.apk"
+        //val UPDATE_SERVER_URL = "http://10.0.20.167"
+        //val APK_UPDATE_URL = "http://10.0.20.167/release.apk"
 
 
 
@@ -18,7 +19,7 @@ class Const {
         val DB_NAME: String = "task_database_2"
 
         //Prod Server
-        val API_URL = "http://10.0.20.179:90";
+        val API_URL = "http://94.158.46.179:90"
         var API_TASK = "/megaplan/task"
 
         //var API_UPLOAD = "/megaplan/upload"

@@ -10,7 +10,7 @@ object LdapTest {
     fun main(args: Array<String>) {
        try {
            val connection = LDAPConnection("office.lds.ua", 389)
-           connection.bind("office" + "\\reznichenko.i", "123@Aabbqq12")
+           connection.bind("office" + "\\~userName~", "....")
            println("222222")
        }catch (e: Exception){
            e.printStackTrace()

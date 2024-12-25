@@ -20,10 +20,8 @@ import com.lds.appupdater.AppUpdater.Companion.checkAppVersion
 import com.lds.appupdater.AppUpdater.Companion.getCurrentAppVersionCode
 import com.lds.appupdater.AppUpdater.Companion.isNewVersionAvailable
 import com.lds.quickdeal.R
-import com.lds.quickdeal.android.config.Const.Companion.APK_UPDATE_URL
-import com.lds.quickdeal.android.config.Const.Companion.UPDATE_SERVER_URL
+
 import com.lds.quickdeal.navigation.AppNavigation
-import com.lds.quickdeal.ui.viewmodels.MainViewModel
 
 import com.pouyaheydari.appupdater.compose.AndroidAppUpdater
 import com.pouyaheydari.appupdater.compose.pojo.UpdaterDialogData
@@ -31,7 +29,7 @@ import com.pouyaheydari.appupdater.core.pojo.Store
 import com.pouyaheydari.appupdater.core.pojo.StoreListItem
 import com.pouyaheydari.appupdater.core.pojo.Theme
 import dagger.hilt.android.AndroidEntryPoint
-
+import com.pouyaheydari.appupdater.core.R as coreR
 
 //@AndroidEntryPoint
 //class MainActivity : ComponentActivity() {
@@ -66,28 +64,37 @@ class MainActivity : ComponentActivity() {
                 var context: Context = LocalContext.current
                 var isUpdateDialogVisible by remember { mutableStateOf(false) }
                 var storeListItems = listOf(
+
+//                    StoreListItem(
+//                        store = Store.DIRECT_URL,
+//                        title = "Обновить",
+//                        url = APK_UPDATE_URL
+//                    )
+
                     StoreListItem(
-                        store = Store.DIRECT_URL,
+                        store = Store.FDROID,
                         title = "Обновить",
-                        url = APK_UPDATE_URL
-                    )
+                        packageName = packageName,
+                        icon = com.pouyaheydari.appupdater.core.R.drawable.appupdater_ic_fdroid,
+                        url = "https://fdroid.lds.online",
+                    ),
                 )
                 LaunchedEffect(Unit) {
                     isUpdateDialogVisible = false
 
-                    val appVersionInfo = checkAppVersion(UPDATE_SERVER_URL)
-                    println("###AppVerison: $appVersionInfo")
+                    //val appVersionInfo = checkAppVersion(UPDATE_SERVER_URL)
+                    val appVersionCode = checkAppVersion(context)
+
+                    //println("###AppVerison: $appVersionInfo")
                     val currentVersionCode = getCurrentAppVersionCode(context)
 
                     /*appVersionInfo != null && appVersionInfo.versionName != null && isNewVersionAvailable(
                             currentVersion, appVersionInfo.versionName*/
 
-                    if (appVersionInfo != null) {
-                        var isNew =
-                            isNewVersionAvailable(currentVersionCode, appVersionInfo.versionCode ?: 0)
-                        println("Current: ${currentVersionCode}, New version: ${appVersionInfo.versionCode} $isNew")
+                    var isNew = isNewVersionAvailable(currentVersionCode, appVersionCode)
+                    println("Current: ${currentVersionCode}, New version: $appVersionCode $isNew")
 
-                        if (isNew) {
+                    if (isNew) {
 //                    _storeListItem.value = listOf(
 //                        StoreListItem(
 //                            store = Store.DIRECT_URL,
@@ -95,8 +102,7 @@ class MainActivity : ComponentActivity() {
 //                            url = APK_UPDATE_URL
 //                        )
 //                    )
-                            isUpdateDialogVisible = true
-                        }
+                        isUpdateDialogVisible = true
                     }
                 }
                 if (isUpdateDialogVisible) {
@@ -108,7 +114,7 @@ class MainActivity : ComponentActivity() {
                             storeList = storeListItems,
                             theme = Theme.SYSTEM_DEFAULT,
                             onDismissRequested = {
-                                isUpdateDialogVisible = false //viewModel.dismissUpdateDialog()
+                                isUpdateDialogVisible = false
                             }
                         ),
                     )

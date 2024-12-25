@@ -125,10 +125,6 @@ fun LoginScreen(
 //        }
 //    }
 
-    // Получение версии приложения
-    val appVersion = BuildConfig.VERSION_NAME
-
-
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         content = { padding ->
@@ -240,7 +236,7 @@ fun LoginScreen(
                         }
                     }
 
-                    // Футер с версией приложения прижат к низу
+                    val appVersion = BuildConfig.VERSION_NAME
                     Text(
                         text = "Версия: $appVersion",
                         style = MaterialTheme.typography.bodySmall,
