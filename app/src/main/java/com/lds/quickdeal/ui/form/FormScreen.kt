@@ -17,6 +17,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,27 +28,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -55,10 +55,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
@@ -66,30 +66,45 @@ import androidx.compose.runtime.saveable.rememberSaveable
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.layout.ContentScale
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import br.com.frazo.ui.compose.materialv3.AudioRecorder
-import br.com.frazo.ui.visualizer.MirrorWaveRecordingVisualizer
+import br.com.frazo.audio_services.player.AudioPlayingData
+import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.rememberAsyncImagePainter
+import coil3.decode.DataSource
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.lds.quickdeal.R
 import com.lds.quickdeal.android.config.Const
-import com.lds.quickdeal.android.config.Const.Companion.DEFAULT_OWNERS
+
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.entity.TaskStatus
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.AttachFileType
 import com.lds.quickdeal.android.utils.UriUtils
-import com.lds.quickdeal.megaplan.entity.Owner
+import com.lds.quickdeal.megaplan.entity.Responsible
 import com.lds.quickdeal.megaplan.entity.TaskRequest
 import com.lds.quickdeal.ui.AddFileOrCaptureButton
 import com.lds.quickdeal.ui.LoadingAnimation
@@ -121,6 +136,7 @@ var tmpVal: Uri? = Uri.EMPTY
 lateinit var fusedLocationClient: FusedLocationProviderClient
 
 
+@OptIn(ExperimentalPermissionsApi::class)
 @ExperimentalMaterial3Api
 @Composable
 fun FormScreen(
@@ -154,6 +170,12 @@ fun FormScreen(
     var latitude by rememberSaveable { mutableStateOf<Double?>(null) }
     var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
     var address by rememberSaveable { mutableStateOf<String>("Адрес не определён") }
+
+    val audioNoteStatus by viewModel.audioStatus.collectAsState()
+    val audioPlayingData by viewModel.audioNotePlayingData.collectAsState()
+    val audioData by viewModel.audioRecordFlow.collectAsState()
+
+    val permissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
 
     LaunchedEffect(latitude, longitude) {
@@ -222,9 +244,12 @@ fun FormScreen(
 //        if (DEFAULT_OWNERS.isEmpty()) null else DEFAULT_OWNERS[0]
 //    ) }
 
-    var selectedResponsible by rememberSaveable {
-        mutableStateOf(DEFAULT_OWNERS.getOrNull(0))
-    }
+//    var selectedResponsible by rememberSaveable {
+//        mutableStateOf(DEFAULT_OWNERS.getOrNull(0))
+//    }
+
+    val owners by viewModel.owners.collectAsState()
+    val selectedResponsible by viewModel.selectedResponsible.collectAsState()
 
     var expanded by rememberSaveable { mutableStateOf(false) }
 
@@ -471,37 +496,105 @@ fun FormScreen(
 
 
                 //=========================
-                selectedResponsible?.let {
-                    Text("Ответственный", style = MaterialTheme.typography.labelLarge)
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        OutlinedTextField(
-                            value = it.description,
-                            onValueChange = {},
-                            label = { Text("Ответственный") },
-                            readOnly = true,
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
+                if (owners.isEmpty()) {
+                    OutlinedTextField(
+                        value = "Список пуст",
+                        onValueChange = {},
+                        label = { Text("Ответственный") },//
+                        readOnly = true,
+                        enabled = false, // Поле недоступно для взаимодействия
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    )
+                } else {
+                    selectedResponsible?.let {
+                        //Text("Ответственный", style = MaterialTheme.typography.labelLarge)
+                        ExposedDropdownMenuBox(
                             expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                            onExpandedChange = { expanded = !expanded }
                         ) {
-                            DEFAULT_OWNERS.forEach { owner ->
-                                DropdownMenuItem(
-                                    text = { Text("${owner.description} (${owner.id})") },
-                                    onClick = {
-                                        selectedResponsible = owner
-                                        expanded = false
-                                    }
-                                )
+                            OutlinedTextField(
+                                value = it.description,
+                                onValueChange = {},
+                                label = { Text("Ответственный") },
+                                readOnly = true,
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp)
+                            )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                owners.forEach { owner ->
+
+                                    //showAvatar(owner.avatar)
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            //Text("${owner.description} (${owner.id})")
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Start,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+
+                                                println("AVATAR: ${owner.avatar}")
+
+                                                AsyncImage(
+                                                    model = ImageRequest.Builder(LocalContext.current)
+                                                        .data(owner.avatar)
+                                                        .crossfade(true)
+                                                        .build(),
+                                                    placeholder = painterResource(R.drawable.ic_person_placeholder),
+                                                    error = painterResource(R.drawable.ic_person_placeholder),
+                                                    //error = painterResource(R.drawable.ic_person_placeholder),
+
+                                                    contentDescription = "Аватар ${owner.description}",
+                                                    modifier = Modifier
+                                                        .size(24.dp)
+                                                        .clip(CircleShape),
+                                                    contentScale = ContentScale.Crop,
+                                                    onError = { error ->
+                                                        println("AsyncImage Ошибка загрузки аватара для ${owner.description}: ${error.result.throwable.message}")
+                                                    }
+                                                )
+                                                //Text("${owner.avatar}")
+
+                                                Spacer(modifier = Modifier.width(12.dp))
+
+
+                                                val title  = buildAnnotatedString {
+                                                    append(owner.description)
+                                                    append(" ")
+                                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                        append("(")
+                                                        append(if (owner.position.isEmpty()) owner.id else owner.position)
+                                                        append(")")
+                                                    }
+                                                }
+                                                Text(
+                                                    text = title,
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            viewModel.updateResponsible(owner)
+                                            expanded = false
+                                        }
+                                    )
+                                    //val sizeResolver = rememberConstraintsSizeResolver()
+
+
+                                }
                             }
                         }
                     }
                 }
+
                 //=========================
 
 
@@ -656,40 +749,112 @@ fun FormScreen(
                     }
                 }
 
-//                AudioRecorder(
-//                    modifier = Modifier.padding(horizontal = 12.dp),
-//                    recordIcon = {
-//                        //Compose your icon
-//                    },
-//                    stopIcon = {
-//                        //Compose your icon
-//                    },
+                println("audio state: $audioNoteStatus")
+                //if (audioNoteStatus == TaskViewModel.AudioNoteStatus.HAVE_TO_RECORD) {
+
+
+//                when (permissionState.status) {
+//                    PermissionStatus.Granted -> {
+//                        Text("Разрешение предоставлено!")
+//                    }
 //
-//                    onRecordRequested = viewModel.startRecordingAudioNote(), // that will call the viewmodel `startRecordingAudioNote` method.
-//                    onStopRequested = onAudioRecordStopRequested, // that will call the viewmodel `stopRecordingAudio` method.
-//                    audioRecordingData = audioRecordingData,
-//                    recordingWaveVisualizer = MirrorWaveRecordingVisualizer(
-//                        wavePaint = Paint().apply {
-//                            color = LocalContentColor.current.toArgb()
-//                            strokeWidth = 2f
-//                            style = Paint.Style.STROKE
-//                            strokeCap = Paint.Cap.ROUND
-//                            flags = Paint.ANTI_ALIAS_FLAG
-//                            strokeJoin = Paint.Join.BEVEL
-//                        },
-//                        middleLinePaint = Paint().apply {
-//                            color = LocalTextSelectionColors.current.handleColor.toArgb()
-//                            style = Paint.Style.FILL_AND_STROKE
-//                            strokeWidth = 2f
-//                            pathEffect =
-//                                DashPathEffect(arrayOf(4f, 4f).toFloatArray(), 0f)
+//                    is PermissionStatus.Denied -> {
+//                        if ((permissionState.status as PermissionStatus.Denied).shouldShowRationale) {
+//                            Text("Для записи звука требуется ваше разрешение.")
+//                        } else {
+//                            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+//                                data = Uri.fromParts("package", context.packageName, null)
+//                            }
+//                            context.startActivity(intent)
 //                        }
+//                        //Запросить разрешение
+//                        IconButton(
+//                            onClick = { permissionState.launchPermissionRequest() },
+//                            ) {
+//                            Icon(
+//                                imageVector = Icons.Filled.Mic,
+//                                contentDescription = "Start Recording",
+//                                //modifier = Modifier.size(48.dp)
+//                            )
+//                        }
+//                    }
+//                }
+
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(50.dp),
+//                    horizontalArrangement = Arrangement.Center
+//                ) {
+//
+//
+//                    AudioRecorder(
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .padding(horizontal = 12.dp),
+//                        recordIcon = {
+//                            //Icons.Filled.PlayCircleFilled
+//                            Icon(
+//                                imageVector = Icons.Filled.Mic,
+//                                contentDescription = "Start Recording",
+//                                //modifier = Modifier.size(48.dp)
+//                            )
+//                        },
+//                        stopIcon = {
+//                            //Icons.Filled.StopCircle
+//                            Icon(
+//                                imageVector = Icons.Filled.Stop,
+//                                contentDescription = "Stop Recording",
+//                                //modifier = Modifier.size(48.dp)
+//                            )
+//                        },
+//
+//                        onRecordRequested = { viewModel.startRecordingAudioNote() },
+//                        onStopRequested = { viewModel.stopRecordingAudio() },
+//                        audioRecordingData = audioData,
+//                            recordingWaveVisualizer = MirrorWaveRecordingVisualizer(
+//                                wavePaint = Paint().apply {
+////                                    color = Color(0xFFFF1744).toArgb()//LocalContentColor.current.toArgb()
+////                                    strokeWidth = 2f
+////                                    style = Paint.Style.STROKE
+////                                    strokeCap = Paint.Cap.ROUND
+////                                    flags = Paint.ANTI_ALIAS_FLAG
+////                                    strokeJoin = Paint.Join.BEVEL
+//
+//                                    color = android.graphics.Color.BLACK
+//                                    strokeWidth = 2f
+//                                    style = Paint.Style.STROKE
+//                                    strokeCap = Paint.Cap.ROUND
+//                                    flags = Paint.ANTI_ALIAS_FLAG
+//                                    strokeJoin = Paint.Join.BEVEL
+//                                },
+//                                middleLinePaint = Paint().apply {
+//                                    color = LocalTextSelectionColors.current.handleColor.toArgb()
+//                                    style = Paint.Style.FILL_AND_STROKE
+//                                    strokeWidth = 2f
+//                                    pathEffect = DashPathEffect(arrayOf(4f, 4f).toFloatArray(), 0f)
+//                                }
+//                            )
 //                    )
-//                )
+//                    //}
+//
+//
+////                    var sliderValue = 77.0f
+////                    Slider(
+////                        value = sliderValue,
+////                        onValueChange = { sliderValue = it },
+////                        modifier = Modifier.padding(16.dp),
+////                        valueRange = 0f..100f,
+////                        steps = 10
+////                    )
+//
+//                    MyAudioPlayer(audioPlayingData)
+//                }
 
 //        Button(onClick = { /* Надиктовать текст */ }, modifier = Modifier.padding(top = 8.dp)) {
 //            Text("Надиктовать содержание")
 //        }
+
 
                 Row(
                     modifier = Modifier
@@ -726,7 +891,7 @@ fun FormScreen(
 
                             isLoading = true
 
-                            val vacancyId = "1018054"
+                            //val vacancyId = "1018054"
                             val taskRequest = TaskRequest(
                                 name = currentTask.name,
                                 subject = currentTask.subject
@@ -734,18 +899,15 @@ fun FormScreen(
                                 //    auditors = auditors,
                                 //    executors = executors,
                                 // Временно убрали parent = Parent(contentType = "Task", id = vacancyId) // ID родительской задачи
-                                ,
-                                isTemplate = false //Добавили
-                                ,
-                                isUrgent = false //Добавили
-                                ,
-                                latitude = latitude,
+                                , isTemplate = false //Добавили
+                                , isUrgent = false //Добавили
+                                , latitude = latitude,
                                 longitude = longitude,
                                 megaplanId = currentTask.megaplanId
                             )
                             // ID ответственного | owner = Owner(contentType = "Employee", id = "1000093"),
                             selectedResponsible?.let {
-                                taskRequest.responsible = Owner(
+                                taskRequest.responsible = Responsible(
                                     contentType = "Employee",//it.contentType
                                     id = it.id
                                 )
@@ -772,6 +934,8 @@ fun FormScreen(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
+
+                                    navController.navigate("tasks")
                                 },
                                 { err ->
                                     isLoading = false
@@ -809,7 +973,7 @@ fun FormScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0x2C000000)) // Полупрозрачный фон
+                    .background(Color(0x2C000000))
                     .wrapContentSize(Alignment.Center)
             ) {
                 LoadingAnimation()
@@ -822,6 +986,100 @@ fun FormScreen(
 }
 
 
+//@Composable
+//fun showAvatar(avatar: String) {
+//
+//    AsyncImage(
+//        model = avatar,
+//        contentDescription = null,
+//    )
+////    AsyncImage(
+////        model = avatar,
+////        contentDescription = "x",
+////        modifier = Modifier
+////            .size(24.dp)
+////            .clip(CircleShape),
+////        contentScale = ContentScale.Crop
+////    )
+////
+////
+////    val painter = rememberAsyncImagePainter("https://ktor.io/static/bg-primary-desktop-dd085c53689aae94cac3264a5e7e7657.png")
+////
+////    val state by painter.state.collectAsState()
+////    if (state is AsyncImagePainter.State.Success && (state as AsyncImagePainter.State.Success).result.dataSource != DataSource.MEMORY_CACHE) {
+////        // Perform the transition animation.
+////    }
+////
+////    Image(
+////        painter = painter,
+////        contentDescription = null,
+////    )
+//
+////                                                SubcomposeAsyncImage(
+////                                                    model = owner.avatar,
+////                                                    loading = {
+////                                                        CircularProgressIndicator()
+////                                                    },
+////                                                    contentDescription = null,
+////                                                )
+////                                                AsyncImage(
+//////                                                    model = owner.avatar,
+//////                                                    contentDescription = "Аватар ${owner.description}"
+////////                                                    modifier = Modifier.size(100.dp)
+////////                                                    .clip(CircleShape),
+////////                                                    contentScale = ContentScale.Crop
+////
+////                                                    model = ImageRequest.Builder(LocalContext.current)
+////                                                        .data(owner.avatar)
+////                                                        //.crossfade(true)
+////                                                        .build(),
+//////                                                    //placeholder = painterResource(R.drawable.placeholder),
+////                                                    contentDescription = "Аватар ${owner.description}",
+//////                                                    contentScale = ContentScale.Crop,
+////                                                    modifier = Modifier.clip(CircleShape),
+////                                                )
+//}
+
+@Composable
+fun MyAudioPlayer(audioPlayingData: AudioPlayingData) {
+//    AudioPlayer(
+//        modifier = Modifier.padding(horizontal = 12.dp),
+//        audioPlayingData = audioPlayingData,
+//        audioPlayerParams = rememberAudioPlayerParams(
+//            playIcon = {
+//                Icon(
+//                    imageVector = Icons.Default.PlayArrow,
+//                    contentDescription = "Play",
+//                    modifier = Modifier.size(48.dp)
+//                )
+//            },
+//            pauseIcon = {
+//                Icon(
+//                    imageVector = Icons.Default.Pause,
+//                    contentDescription = "Pause",
+//                    modifier = Modifier.size(48.dp)
+//                )
+//            },
+//            endIcon =
+//            //if (onAudioNoteDeleteRequest != null) {
+//            {
+//                Icon(
+//                    imageVector = Icons.Default.Delete,
+//                    contentDescription = "Delete",
+//                    modifier = Modifier.size(48.dp)
+//                )
+//            }
+//            //} else null,
+//        ),
+//
+//        audioPlayerCallbacks = AudioPlayerCallbacks(
+//            onPlay = {},//onAudioNotePlayRequest,
+//            onPause = {},//onAudioNotePauseRequest,
+//            onEndIconClicked = {},//onAudioNoteDeleteRequest,
+//            onSeekPosition = {}//onAudionNoteSeekPosition
+//        )
+//    )
+}
 
 
 fun getCurrentTime(): String {

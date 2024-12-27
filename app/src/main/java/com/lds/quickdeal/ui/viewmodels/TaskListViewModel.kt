@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lds.quickdeal.android.db.TaskDao
 import com.lds.quickdeal.android.entity.UploaderTask
+import com.lds.quickdeal.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -13,10 +14,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TaskListViewModel @Inject constructor(
-    private val taskDao: TaskDao
+    private val taskDao: TaskDao,
+    private val repository: TaskRepository
+
 ) : ViewModel() {
     private val _tasks = MutableLiveData<List<UploaderTask>>()
     val tasks: LiveData<List<UploaderTask>> get() = _tasks
+
+
+    var localRepo = true
+
 
 //    init {
 //        loadTasks()
@@ -24,7 +31,17 @@ class TaskListViewModel @Inject constructor(
 
     fun loadTasks() {
         viewModelScope.launch {
-            _tasks.value = taskDao.getAllTasks()
+           if(localRepo){
+               _tasks.value = taskDao.getAllTasks()
+           }else{
+               val result = repository.getAllTasks()
+               if (result.isSuccess) {
+                   _tasks.postValue(result.getOrDefault(emptyList()))
+               } else {
+                   println(result.exceptionOrNull()?.message ?: "Unknown error")
+                   //_error.postValue(result.exceptionOrNull()?.message ?: "Unknown error")
+               }
+           }
         }
     }
 

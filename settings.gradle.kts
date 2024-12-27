@@ -27,4 +27,4 @@ include(":app")
 
 include(":desktop")
 //include(":androidappupdater")
-include(":custom-gradle-tasks")
+//include(":custom-gradle-tasks")

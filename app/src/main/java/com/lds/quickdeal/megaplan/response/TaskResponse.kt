@@ -1,6 +1,7 @@
 package com.lds.quickdeal.megaplan.response
 
 import com.lds.quickdeal.megaplan.entity.Owner
+import com.lds.quickdeal.megaplan.entity.Responsible
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -298,19 +299,6 @@ data class Todo(
     val id: String,
     val taskId: String,
     val name: String
-)
-
-
-@Serializable
-data class Responsible(
-
-    val type: String, // Employee, ContractorCompany, etc.
-
-
-    @SerialName("contentType")
-    val contentType: String,
-    @SerialName("id")
-    val id: String
 )
 
 @Serializable

@@ -7,6 +7,7 @@ import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.Const.Companion.FILE_KEY
+import com.lds.quickdeal.android.config.ResponsibleWrapper
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys.SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN
 import com.lds.quickdeal.android.db.TaskDao
@@ -14,6 +15,7 @@ import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TaskUtils.Companion.appendTaskRequest
 import com.lds.quickdeal.android.utils.TimeUtils
 import com.lds.quickdeal.android.utils.UriUtils
+import com.lds.quickdeal.megaplan.entity.Responsible
 
 import com.lds.quickdeal.megaplan.entity.TaskRequest
 import com.lds.quickdeal.megaplan.entity.TaskResponse
@@ -27,6 +29,7 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -441,32 +444,11 @@ class TaskRepository @Inject constructor(
                     Result.failure(Exception("Unknown error occurred, status: ${response.status}, body: ${response.bodyAsText()}"))
                 }
             }
-        } catch (e: CancellationException) {
-            println("Coroutine cancelled: ${e.message}")
-            throw e // Обязательно перебросьте исключение дальше, чтобы не нарушить логику отмены
-        } catch (e: IOException) {
-            // Ошибки сети (например, отсутствие интернета)
-            println("Ошибка сети: ${e.message} $e")
-            return Result.failure(Exception("Ошибка сети. Проверьте подключение к интернету"))
-        } catch (e: ClientRequestException) {
-            // Клиентская ошибка (4xx)
-            println("Клиентская ошибка: ${e.message}")
-            return Result.failure(Exception("Клиентская ошибка: ${e.response.status.description}"))
-        } catch (e: ServerResponseException) {
-            // Серверная ошибка (5xx)
-            println("Ошибка сервера: ${e.message}")
-            return Result.failure(Exception("Ошибка на стороне сервера: ${e.response.status.description}"))
         } catch (e: HttpRequestTimeoutException) {
-            // Таймаут запроса
             println("Превышено время ожидания запроса: ${e.message}")
             return Result.failure(Exception("Превышено время ожидания запроса. Попробуйте позже"))
-        } catch (e: Exception) {
-            // Обработка остальных исключений
-            println("Неизвестная ошибка: ${e.javaClass}: ${e.message}")
-            return Result.failure(Exception("Произошла неизвестная ошибка"))
-        } catch (e: OutOfMemoryError) {
-            println("FileLoad OOM при загрузке файла $e")
-            return Result.failure(Exception("Ошибка: недостаточно памяти для обработки файла"))
+        } catch (e: Throwable) {
+            return handleException(e)
         }
     }
 
@@ -474,5 +456,164 @@ class TaskRepository @Inject constructor(
         val extension = fileName.substringAfterLast('.', "")
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
             ?: "application/octet-stream"
+    }
+
+    suspend fun getAllTasks(): Result<List<UploaderTask>> {
+        val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
+        val username = prefs.getString(SettingsPreferencesKeys.AD_USERNAME, null)
+        try {
+            val response: HttpResponse =
+                client.get("${Const.API_URL}/megaplan/task_list?username=$username")
+            return if (response.status.isSuccess()) {
+
+                try {
+
+
+                    val tmp: List<TaskResponse> = response.body()
+                    val uploaderTasks: List<UploaderTask> = tmp.map { taskResponse ->
+                        println("${taskResponse.updatedAt} == ${taskResponse.createdAt}")
+                        UploaderTask(
+                            _id = 0,
+                            name = taskResponse.name,
+                            subject = taskResponse.subject,
+                            isUrgent = taskResponse.isUrgent
+                                ?: false, // Если isUrgent null, то false
+                            createdAt = taskResponse.createdAt
+                                ?: "", // Если createdAt null, то пустая строка
+                            updatedAt = taskResponse.updatedAt
+                                ?: "", // Если updatedAt null, то пустая строка
+                            megaplanId = taskResponse.megaplanId,
+                            status = taskResponse.getStatus() // Преобразуем статус
+                        )
+                    }
+
+
+                    //Result.success(taskResponse)
+                    Result.success(uploaderTasks)
+
+
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            } else {
+                // Если статус неуспешный, обрабатываем как ошибку
+                try {
+
+                    val errorResponse: TaskErrorResponse = response.body()
+                    //var msg = errorResponse.meta.errors.get(0).message
+                    var msg = errorResponse.message
+
+                    if (BuildConfig.DEBUG) {
+                        println("ОШИБКА СЕРВЕРА: " + errorResponse.toString())
+                        println("ОШИБКА СЕРВЕРА: " + errorResponse.message)
+                    }
+
+                    Result.failure(Exception(msg))
+                } catch (e: Exception) {
+                    Result.failure(Exception("Unknown error occurred, status: ${response.status}, body: ${response.bodyAsText()}"))
+                }
+            }
+        } catch (e: HttpRequestTimeoutException) {
+            // Таймаут запроса
+            println("Превышено время ожидания запроса: ${e.message}")
+            return Result.failure(Exception("Превышено время ожидания запроса. Попробуйте позже"))
+        } catch (e: Throwable) {
+            return handleException(e)
+        }
+
+    }
+
+    suspend fun getOwners(): List<ResponsibleWrapper> {
+        return try {
+            var response: HttpResponse = client.get("${Const.API_URL}/megaplan/users")
+
+            return if (response.status.isSuccess()) {
+
+                var responsible: List<Responsible> = response.body()
+                return responsible.map {
+
+                    var tmp =
+                        it.avatar?.thumbnail?.replace("{width}", "100")?.replace("{height}", "100")
+//                    var tmp =
+//                        it.avatar?.path
+
+                    println("avatar: $tmp")
+
+                    ResponsibleWrapper(
+                        "Employee",
+                        it.id,
+                        it.name,
+                        avatar = if (tmp.isNullOrEmpty()) "" else Const.MEGAPLAN_URL + tmp,
+                        position = it.position
+                    )
+                }
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            println("@@@@@" + e)
+            emptyList()
+        }
+    }
+
+//    suspend fun getOwners(): List<EmployeeWrapper> {
+//        // Симуляция загрузки данных с сервера
+//        delay(10000) // Имитация задержки
+//        return listOf(
+//            ,
+//            ,
+//            EmployeeWrapper("Employee", "1000163", "Иванов Петр Сергеевич")
+//        )
+//    }
+}
+
+
+fun <T> handleException(e: Throwable): Result<T> {
+    return when (e) {
+        is CancellationException -> {
+            println("Coroutine cancelled: ${e.message}")
+            throw e // Обязательно перебросьте исключение дальше
+        }
+
+        is IOException -> {
+            // Ошибки сети (например, отсутствие интернета)
+            println("Ошибка сети: ${e.message} $e")
+            Result.failure(Exception("Ошибка сети. Проверьте подключение к интернету"))
+        }
+
+        is ClientRequestException -> {
+            // Клиентская ошибка (4xx)
+            println("Клиентская ошибка: ${e.message}")
+            Result.failure(Exception("Клиентская ошибка: ${e.response.status.description}"))
+        }
+
+        is ServerResponseException -> {
+            // Серверная ошибка (5xx)
+            println("Ошибка сервера: ${e.message}")
+            Result.failure(Exception("Ошибка на стороне сервера: ${e.response.status.description}"))
+        }
+
+//        is HttpRequestTimeoutException -> {
+//            // Таймаут запроса
+//            println("Превышено время ожидания запроса: ${e.message}")
+//            Result.failure(Exception("Превышено время ожидания запроса. Попробуйте позже"))
+//        }
+
+        is OutOfMemoryError -> {
+            // Ошибка памяти
+            println("FileLoad OOM при загрузке файла $e")
+            Result.failure(Exception("Ошибка: недостаточно памяти для обработки файла"))
+        }
+
+        is Exception -> {
+            // Обработка остальных исключений
+            println("Неизвестная ошибка: ${e.javaClass}: ${e.message}")
+            Result.failure(Exception("Произошла неизвестная ошибка"))
+        }
+
+        else -> {
+            println("Неизвестная ошибка: ${e.javaClass}: ${e.message}")
+            Result.failure(Exception("Произошла неизвестная ошибка"))
+        }
     }
 }

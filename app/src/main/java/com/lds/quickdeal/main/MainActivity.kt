@@ -126,24 +126,24 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        print("@@@@ $requestCode $permissions $grantResults")
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-        deviceId: Int
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
-        print("@@@@ $requestCode $permissions $grantResults")
-    }
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        print("@@@@ $requestCode $permissions $grantResults")
+//    }
+//
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<out String>,
+//        grantResults: IntArray,
+//        deviceId: Int
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+//        print("@@@@ $requestCode $permissions $grantResults")
+//    }
 
 }
 //    @Composable

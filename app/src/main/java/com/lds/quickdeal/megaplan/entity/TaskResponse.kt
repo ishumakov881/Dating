@@ -36,11 +36,17 @@ data class TaskResponse(
 
     val name: String,
     val subject: String,
+
     val isTemplate: Boolean? = null,
+    val isUrgent: Boolean? = null,
+
     val originalTemplate: Task? = null,
+
     @SerialName("createdAt") val createdAt: String? = null,
     @SerialName("updatedAt") val updatedAt: String? = null,
 
+//    @SerialName("timeCreated") val createdAt: String? = null,
+//    @SerialName("statusChangeTime") val updatedAt: String? = null,
 
 
 //    val username: String,
@@ -56,7 +62,7 @@ data class TaskResponse(
 //
 //    //Original items from megaplan
 //    val contentType: String, // Всегда Task
-//    val isUrgent: Boolean? = null,
+
 //    val isNegotiation: Boolean? = null,
 //    val negotiationItems: List<NegotiationItem>? = null,
 //    val negotiationItemsCount: Int? = null,
@@ -173,6 +179,9 @@ data class TaskResponse(
 
 
     fun getStatus(): TaskStatus {
+
+        //assigned  "status": "assigned",
+
         var completed = !this.synced.isNullOrEmpty() && !this.megaplanId.isNullOrEmpty()
         println("COMPLETED ?? $completed")
         //@@@@
@@ -180,12 +189,6 @@ data class TaskResponse(
         return TaskStatus.COMPLETED
     }
 }
-
-@Serializable
-data class Responsible(
-    val contentType: String
-)
-
 
 @Serializable
 data class Attach(

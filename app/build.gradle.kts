@@ -187,8 +187,8 @@ kapt {
 dependencies {
 
 
-    implementation("com.github.ygorluizfrazao.compose-audio-controls:audio-services:v1.0.0-alpha03")
-    implementation("com.github.ygorluizfrazao.compose-audio-controls:ui:v1.0.0-alpha03")
+    implementation("com.github.ygorluizfrazao.compose-audio-controls:audio-services:v1.0.3-alpha01")
+    implementation("com.github.ygorluizfrazao.compose-audio-controls:ui:v1.0.3-alpha01")
     //implementation(libs.richeditor.compose)
     // Room
     implementation(libs.androidx.room.runtime)
@@ -252,6 +252,10 @@ dependencies {
     //implementation ("com.google.accompanist:accompanist-swipetodismiss:0.31.2-alpha")
     //noinspection UseTomlInstead
     implementation("com.github.SirLordPouya.AndroidAppUpdater:compose:10.0.0")
+
+    implementation(libs.coil.compose)
+    implementation("io.coil-kt.coil3:coil-network-ktor2:3.0.4")
+    implementation("io.coil-kt.coil3:coil-network-ktor3:3.0.4")
 }
 java {
     toolchain {

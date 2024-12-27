@@ -3,6 +3,9 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="11">
       <module name="QuickDeal.androidappupdater" target="21" />
+      <module name="QuickDeal.custom-gradle-tasks" target="21" />
+      <module name="QuickDeal.custom-gradle-tasks.main" target="21" />
+      <module name="QuickDeal.custom-gradle-tasks.test" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

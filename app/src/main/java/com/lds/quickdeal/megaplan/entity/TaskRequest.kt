@@ -22,7 +22,7 @@ data class TaskRequest(
 
     val owner: Owner? = null, // Владелец (Создатель)
     val contentType: String = "Task", // всегда равен "Task"
-    var responsible: Owner? = null, // Ответственный - UserUnion
+    var responsible: Responsible? = null, // Ответственный - UserUnion
     val parent: Parent? = null, // Надзадача/надпроект
 
     val isUrgent: Boolean? = null, // Горящая

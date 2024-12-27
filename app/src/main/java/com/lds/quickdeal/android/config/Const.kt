@@ -14,7 +14,7 @@ class Const {
         //val APK_UPDATE_URL = "http://10.0.20.167/release.apk"
 
 
-        //val API_URL = "https://megaplan.lds.online";
+        val MEGAPLAN_URL = "https://megaplan.lds.online";
         //var API_TASK = "/api/v3/task"
 
         val DB_NAME: String = "task_database_2"
@@ -47,12 +47,12 @@ class Const {
         //val DEFAULT_RESPONSIBLE = OwnerWrapper("Employee", "1000161", "Гурьева Юлия Валерьевна")
 
 
-        val DEFAULT_OWNERS: List<EmployeeWrapper> = listOf(
-//        OwnerWrapper(
-//            contentType = "Employee",
-//            id = "1000161",
-//            description = "Гурьева Юлия Валерьевна"
-//        ), // Default Owner
+        val DEFAULT_OWNERS_: List<ResponsibleWrapper> = listOf(
+//            EmployeeWrapper(
+//                contentType = "Employee",
+//                id = "1000161",
+//                description = "Гурьева Юлия Валерьевна"
+//            ), // Default Owner
             //OwnerWrapper("Employee", "1000216", "Резниченко Иван Павлович"),
             //Owner("Employee", "1000163")
         )
@@ -65,8 +65,10 @@ class Const {
 }
 
 @Serializable
-data class EmployeeWrapper(
+data class ResponsibleWrapper(
     val contentType: String = "Employee", // всегда Employee
     val id: String, // Идентификатор
-    val description: String
+    val description: String,
+    val avatar: String,
+    val position: String
 )
