@@ -17,3 +17,4 @@ local.properties
 /shared/build
 /composeApp/build
 /*/build
+/.kotlin
