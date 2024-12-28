@@ -19,7 +19,7 @@ import br.com.frazo.audio_services.recorder.AudioRecordingData
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const.Companion.DEFAULT_OWNERS_
-import com.lds.quickdeal.android.config.ResponsibleWrapper
+import com.lds.quickdeal.android.db.ResponsibleWrapper
 import com.lds.quickdeal.android.db.TaskDao
 import com.lds.quickdeal.android.entity.TaskStatus
 import com.lds.quickdeal.android.entity.UploaderTask
@@ -78,9 +78,10 @@ class TaskViewModel
 
 
     //Initialize your variables
-    private var _audioNotePlayingData = MutableStateFlow(AudioPlayingData(AudioPlayerStatus.NOT_INITIALIZED, 0, 0))
+    private var _audioNotePlayingData =
+        MutableStateFlow(AudioPlayingData(AudioPlayerStatus.NOT_INITIALIZED, 0, 0))
     val audioNotePlayingData = _audioNotePlayingData.asStateFlow()
-    var audioPlayer: AudioPlayer =  AndroidAudioPlayer(context)
+    var audioPlayer: AudioPlayer = AndroidAudioPlayer(context)
 
 
     // Объект текущей задачи
@@ -97,21 +98,23 @@ class TaskViewModel
 
     init {
         _currentTask.value = createEmptyTask()
-        loadOwners()
     }
 
-    private fun loadOwners() {
-        viewModelScope.launch {
-            try {
-                val loadedOwners = taskRepository.getOwners()
-                _owners.value = loadedOwners
-                _selectedResponsible.value = loadedOwners.getOrNull(0) // Установить первого как выбранного
-            } catch (e: Exception) {
-                // Обработка ошибок
-                println("Ошибка загрузки: ${e.message}")
-            }
-        }
-    }
+//    private fun loadOwners() {
+//        viewModelScope.launch {
+//            try {
+//                val loadedOwners = taskRepository.getOwners()
+//                _owners.value = loadedOwners
+//                _selectedResponsible.value = loadedOwners.getOrNull(0) // Установить первого как выбранного
+//
+//                //@@@ сохранение в базу...
+//
+//            } catch (e: Exception) {
+//                // Обработка ошибок
+//                println("Ошибка загрузки: ${e.message}")
+//            }
+//        }
+//    }
 
     fun updateDescription(newDescription: String) {
         val task = _currentTask.value ?: createEmptyTask()
@@ -199,7 +202,7 @@ class TaskViewModel
     private var isTaskLoaded = false
 
     fun setTaskForEditing(taskId: String) {
-        if (!isTaskLoaded && taskId.isNotEmpty()) {
+        if (!isTaskLoaded) {
             viewModelScope.launch {
                 if (taskId.isNotEmpty()) {
                     val task = taskDao.getTaskById(taskId)
@@ -207,7 +210,23 @@ class TaskViewModel
                 } else {
                     _currentTask.value = createEmptyTask()
                 }
+                try {
+                    val loadedOwners = taskRepository.getOwners()
+                    _owners.value = loadedOwners
+
+                    _selectedResponsible.value = loadedOwners.find {
+                        it.megaplanUserId == _currentTask.value?.responsibleId
+                    } ?: loadedOwners.firstOrNull()
+                    //_selectedResponsible.value = loadedOwners.getOrNull(0) // Установить первого как выбранного
+
+                    //@@@ сохранение в базу...
+
+                } catch (e: Exception) {
+                    // Обработка ошибок
+                    println("Ошибка загрузки: ${e.message}")
+                }
             }
+
         }
     }
 
@@ -220,7 +239,9 @@ class TaskViewModel
             isUrgent = false,
             status = TaskStatus.NONE,
             createdAt = "",
-            updatedAt = "", megaplanId = ""
+            updatedAt = "",
+            megaplanId = "",
+            responsibleId = ""
         )
     }
 

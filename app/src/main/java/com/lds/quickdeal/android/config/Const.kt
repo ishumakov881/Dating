@@ -1,9 +1,10 @@
 package com.lds.quickdeal.android.config
 
-import kotlinx.serialization.Serializable
+import com.lds.quickdeal.android.db.ResponsibleWrapper
 
 class Const {
     companion object {
+
 
         const val FDROID_URL = "https://fdroid.lds.online"
         const val FDROID_URL_INDEX = "$FDROID_URL/repo/index-v1.json"
@@ -13,11 +14,11 @@ class Const {
         //val UPDATE_SERVER_URL = "http://10.0.20.167"
         //val APK_UPDATE_URL = "http://10.0.20.167/release.apk"
 
-
+        const val MEGAPLAN_SYSTEM_ID = "1000093"
         val MEGAPLAN_URL = "https://megaplan.lds.online";
         //var API_TASK = "/api/v3/task"
 
-        val DB_NAME: String = "task_database_2"
+        val DB_NAME: String = "task_database_4"
 
         //Prod Server
         val API_URL = "http://94.158.46.179:90"
@@ -64,11 +65,4 @@ class Const {
     }
 }
 
-@Serializable
-data class ResponsibleWrapper(
-    val contentType: String = "Employee", // всегда Employee
-    val id: String, // Идентификатор
-    val description: String,
-    val avatar: String,
-    val position: String
-)
+

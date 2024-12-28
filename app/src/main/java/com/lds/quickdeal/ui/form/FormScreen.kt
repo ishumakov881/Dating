@@ -17,7 +17,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,7 +41,6 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -84,10 +82,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import br.com.frazo.audio_services.player.AudioPlayingData
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
-import coil3.compose.SubcomposeAsyncImage
-import coil3.compose.rememberAsyncImagePainter
-import coil3.decode.DataSource
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 
@@ -148,7 +142,7 @@ fun FormScreen(
     val currentTask by viewModel.currentTask.observeAsState(
         UploaderTask(
             -1, "", "", false,
-            TaskStatus.NONE, "", "", ""
+            TaskStatus.NONE, "", "", "", ""
         )
     )
     LaunchedEffect(_taskId) {
@@ -541,7 +535,7 @@ fun FormScreen(
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
 
-                                                println("AVATAR: ${owner.avatar}")
+                                                //println("AVATAR: ${owner.avatar}")
 
                                                 AsyncImage(
                                                     model = ImageRequest.Builder(LocalContext.current)
@@ -565,14 +559,18 @@ fun FormScreen(
 
                                                 Spacer(modifier = Modifier.width(12.dp))
 
+                                                var tmp =
+                                                    if (owner.position.isEmpty()) owner.megaplanUserId else owner.position
 
-                                                val title  = buildAnnotatedString {
+                                                val title = buildAnnotatedString {
                                                     append(owner.description)
-                                                    append(" ")
-                                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                        append("(")
-                                                        append(if (owner.position.isEmpty()) owner.id else owner.position)
-                                                        append(")")
+                                                    if (tmp.isNotEmpty()) {
+                                                        append(" ")
+                                                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                            append("(")
+                                                            append(tmp)
+                                                            append(")")
+                                                        }
                                                     }
                                                 }
                                                 Text(
@@ -909,9 +907,12 @@ fun FormScreen(
                             selectedResponsible?.let {
                                 taskRequest.responsible = Responsible(
                                     contentType = "Employee",//it.contentType
-                                    id = it.id
+                                    id = it.megaplanUserId,
                                 )
                             }
+
+
+                            //println("[*]$taskRequest")
 
                             viewModel.createTask(
                                 taskRequest,

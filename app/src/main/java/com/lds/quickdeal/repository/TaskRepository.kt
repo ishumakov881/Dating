@@ -7,7 +7,7 @@ import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.Const.Companion.FILE_KEY
-import com.lds.quickdeal.android.config.ResponsibleWrapper
+import com.lds.quickdeal.android.db.ResponsibleWrapper
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys.SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN
 import com.lds.quickdeal.android.db.TaskDao
@@ -387,7 +387,9 @@ class TaskRepository @Inject constructor(
                     //Oleg server
                     val taskResponse: TaskResponse = response.body()
 
-                    println("@Request megaplanId: ${taskRequest.megaplanId}")
+
+                    var responsibleId = taskRequest.responsible?.id ?: ""
+                    println("@Request: ${taskRequest.megaplanId} | $responsibleId")
 
 
                     println("@@@@@@@@@@@@@@@ ${taskResponse.synced}  ${taskResponse.megaplanId}")
@@ -405,8 +407,8 @@ class TaskRepository @Inject constructor(
                         ,
                         createdAt = taskResponse.createdAt ?: createAtNow,
                         updatedAt = taskResponse.updatedAt ?: createAtNow,
-                        megaplanId = taskResponse.megaplanId
-                            ?: "" // предполагаем, что ID задачи приходит с сервера
+                        megaplanId = taskResponse.megaplanId ?: "" // предполагаем, что ID задачи приходит с сервера
+                        , responsibleId = responsibleId
                     )
 
 
@@ -483,6 +485,8 @@ class TaskRepository @Inject constructor(
                             updatedAt = taskResponse.updatedAt
                                 ?: "", // Если updatedAt null, то пустая строка
                             megaplanId = taskResponse.megaplanId,
+
+                            responsibleId = taskResponse.responsible.id,
                             status = taskResponse.getStatus() // Преобразуем статус
                         )
                     }
@@ -530,30 +534,62 @@ class TaskRepository @Inject constructor(
             return if (response.status.isSuccess()) {
 
                 var responsible: List<Responsible> = response.body()
-                return responsible.map {
+                val specialItems = defaultList()
+//                responsible с такими данными не должен быть добавлен в список
+////                                    "id": "1000093",
+////                                    "name": "Система API",
 
-                    var tmp =
-                        it.avatar?.thumbnail?.replace("{width}", "100")?.replace("{height}", "100")
+
+                val mappedItems = responsible
+                    .filter { it.id != Const.MEGAPLAN_SYSTEM_ID }
+                    .sortedBy { it.name }
+                    .map {
+
+                        var tmp =
+                            it.avatar?.thumbnail?.replace("{width}", "100")
+                                ?.replace("{height}", "100")
 //                    var tmp =
 //                        it.avatar?.path
 
-                    println("avatar: $tmp")
+                        //println("avatar: $tmp")
 
-                    ResponsibleWrapper(
-                        "Employee",
-                        it.id,
-                        it.name,
-                        avatar = if (tmp.isNullOrEmpty()) "" else Const.MEGAPLAN_URL + tmp,
-                        position = it.position
-                    )
-                }
+                        ResponsibleWrapper(
+                            _id = 0, // Room сам сгенерирует ID
+                            contentType = "Employee",
+                            megaplanUserId = it.id,
+                            description = it.name,
+                            avatar = if (tmp.isNullOrEmpty()) "" else Const.MEGAPLAN_URL + tmp,
+                            position = it.position
+                        )
+                    }
+                (specialItems + mappedItems).distinctBy { it.megaplanUserId }
             } else {
-                emptyList()
+                defaultList()
             }
         } catch (e: Exception) {
             println("@@@@@" + e)
-            emptyList()
+            defaultList()
         }
+    }
+
+    private fun defaultList(): List<ResponsibleWrapper> {
+        return listOf(
+            ResponsibleWrapper(
+                _id = 0, // Room сам сгенерирует ID
+                "Employee",
+                megaplanUserId = "",
+                description = "<Не выбрано>",
+                avatar = "",
+                position = ""
+            ),
+//            ResponsibleWrapper(
+//                "Employee",
+//                id = "1000093",
+//                description = "Система API",
+//                avatar = "",
+//                position = ""
+//            )
+        )
     }
 
 //    suspend fun getOwners(): List<EmployeeWrapper> {

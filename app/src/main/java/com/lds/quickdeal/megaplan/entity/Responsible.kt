@@ -40,7 +40,7 @@ data class Responsible(
 //    @SerialName("department")
 //    val department: Department? = null
 ) {
-    //    // Дополнительный конструктор на 2 параметра
+//    // Дополнительный конструктор на 2 параметра
 //    constructor(contentType_: String, id: String) : this(
 //        contentType = contentType_,
 //        id = id

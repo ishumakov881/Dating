@@ -96,7 +96,7 @@ data class TaskResponse(
 //    val templateUsersCount: Int? = null,
 //    val isTemplateOwnerCurrentUser: Boolean? = null,
 //    val owner: Employee,
-//    val responsible: Responsible,
+    val responsible: Responsible,
 //
 //
 //    val deadlineReminders: List<Reminder>? = null,
@@ -175,7 +175,6 @@ data class TaskResponse(
 //    val actualTodosCount: Int? = null,
 //    val finishedTodosCount: Int? = null
 ) {
-
 
 
     fun getStatus(): TaskStatus {
