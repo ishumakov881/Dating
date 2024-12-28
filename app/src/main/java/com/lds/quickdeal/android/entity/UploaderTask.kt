@@ -3,6 +3,7 @@ package com.lds.quickdeal.android.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.lds.quickdeal.megaplan.entity.TaskStatus
 
 
 @Entity(tableName = "tasks")

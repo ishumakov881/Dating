@@ -1,6 +1,11 @@
 [versions]
 accompanistPermissions = "0.24.13-rc"
 agp = "8.7.3"
+
+android-compileSdk = "34"
+android-minSdk = "24"
+android-targetSdk = "34"
+
 coilCompose = "3.0.4"
 hiltAndroid = "2.51.1"
 hiltCompiler = "2.51.1"

@@ -95,12 +95,13 @@ import com.lds.quickdeal.R
 import com.lds.quickdeal.android.config.Const
 
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
-import com.lds.quickdeal.android.entity.TaskStatus
+
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.AttachFileType
 import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Responsible
 import com.lds.quickdeal.megaplan.entity.TaskRequest
+import com.lds.quickdeal.megaplan.entity.TaskStatus
 import com.lds.quickdeal.ui.AddFileOrCaptureButton
 import com.lds.quickdeal.ui.LoadingAnimation
 import com.lds.quickdeal.ui.LogoutButton
@@ -142,8 +143,7 @@ fun FormScreen(
 
     val currentTask by viewModel.currentTask.observeAsState(
         UploaderTask(
-            -1, "", "", false,
-            TaskStatus.NONE, "", "", "", ""
+            -1, "", "", false, TaskStatus.NONE, "", "", "", ""
         )
     )
     LaunchedEffect(_taskId) {

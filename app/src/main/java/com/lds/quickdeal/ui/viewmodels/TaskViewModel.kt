@@ -22,10 +22,12 @@ import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.Const.Companion.DEFAULT_OWNERS_
 import com.lds.quickdeal.android.db.ResponsibleWrapper
 import com.lds.quickdeal.android.db.TaskDao
-import com.lds.quickdeal.android.entity.TaskResponse
-import com.lds.quickdeal.android.entity.TaskStatus
+
+
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.megaplan.entity.TaskRequest
+import com.lds.quickdeal.megaplan.entity.TaskResponse
+import com.lds.quickdeal.megaplan.entity.TaskStatus
 
 import com.lds.quickdeal.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -245,8 +247,7 @@ class TaskViewModel
     }
 
     private fun createEmptyTask(): UploaderTask {
-        val currentDateTime =
-            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val currentDateTime = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return UploaderTask(
             name = "Задача $currentDateTime",
             subject = if (BuildConfig.DEBUG) "Test Description" else "",

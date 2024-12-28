@@ -11,7 +11,7 @@ import com.lds.quickdeal.android.db.ResponsibleWrapper
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys.SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN
 import com.lds.quickdeal.android.db.TaskDao
-import com.lds.quickdeal.android.entity.TaskResponse
+
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TaskUtils.Companion.appendTaskRequest
 import com.lds.quickdeal.android.utils.TimeUtils
@@ -19,6 +19,7 @@ import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Responsible
 
 import com.lds.quickdeal.megaplan.entity.TaskRequest
+import com.lds.quickdeal.megaplan.entity.TaskResponse
 
 
 import com.lds.quickdeal.network.TaskErrorResponse
@@ -401,8 +402,8 @@ class TaskRepository @Inject constructor(
                     val createAtNow = TimeUtils.nowTimeFormatted()
 
                     val task = UploaderTask(
-                        name = taskRequest.name,
-                        subject = taskRequest.subject,
+                        name = taskRequest.name!!,
+                        subject = taskRequest.subject!!,
                         isUrgent = false,//????????????????
                         status = taskResponse.getStatus() // Можно добавить логику для задания статуса задачи
                         ,

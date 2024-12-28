@@ -1,69 +1,88 @@
-package com.lds.quickdeal.android.entity
+package com.lds.quickdeal.megaplan.response
 
-import com.lds.quickdeal.android.entity.TaskStatus
+import com.lds.quickdeal.megaplan.entity.Owner
 import com.lds.quickdeal.megaplan.entity.Responsible
-import com.lds.quickdeal.megaplan.response.AttachesInfo
-import com.lds.quickdeal.megaplan.response.Bonus
-import com.lds.quickdeal.megaplan.response.Comment
-import com.lds.quickdeal.megaplan.response.DateInterval
-import com.lds.quickdeal.megaplan.response.DateTime
-import com.lds.quickdeal.megaplan.response.Employee
-import com.lds.quickdeal.megaplan.response.FinOperation
-import com.lds.quickdeal.megaplan.response.NegotiationItem
-import com.lds.quickdeal.megaplan.response.ParentEntity
-import com.lds.quickdeal.megaplan.response.Project
-import com.lds.quickdeal.megaplan.response.Reminder
-import com.lds.quickdeal.megaplan.response.Schedule
-import com.lds.quickdeal.megaplan.response.Tag
-import com.lds.quickdeal.megaplan.response.Task
-import com.lds.quickdeal.megaplan.response.TaskRights
-import com.lds.quickdeal.megaplan.response.Todo
-import com.lds.quickdeal.megaplan.response.UserCreated
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-
-// Server ...
+@Serializable
+data class TaskResponse(
+    @SerialName("meta")
+    val meta: Meta,
+    @SerialName("data")
+    val data: TaskData
+)
 
 @Serializable
-public data class TaskResponse(
+data class Meta(
+    @SerialName("status")
+    val status: Int,
+    @SerialName("errors")
+    val errors: List<String> = emptyList(),
+//    @SerialName("pagination")
+//    val pagination: List<Any> = emptyList()
+)
 
-
-    @SerialName("synced")
-    val synced: String? = null,
-
-    @SerialName("megaplanId")
-    val megaplanId: String = "",
-
+@Serializable
+data class TaskData(
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("id")
+    val id: String,
+    @SerialName("humanNumber")
+    val humanNumber: Int,
+    @SerialName("name")
     val name: String,
-    val subject: String,
+    @SerialName("isOverdue")
+    val isOverdue: Boolean,
+    @SerialName("status")
+    val status: String,
+    @SerialName("statusChangeTime")
+    val statusChangeTime: DateTime?,
+    @SerialName("owner")
+    val owner: Owner?,
+    @SerialName("responsible")
+    val responsible: Responsible?,
+    @SerialName("participants")
+    val participants: List<Participant> = emptyList(),
+    @SerialName("statement")
+    val statement: String,
+    @SerialName("textStatement")
+    val textStatement: String,
+    @SerialName("activity")
+    val activity: DateTime?,
+    @SerialName("isFavorite")
+    val isFavorite: Boolean
+)
 
-    val isTemplate: Boolean? = null,
-    val isUrgent: Boolean? = null,
 
-    val originalTemplate: Task? = null,
+@Serializable
+data class Department(
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("id")
+    val id: String,
+    @SerialName("name")
+    val name: String
+)
 
-    @SerialName("createdAt") val createdAt: String? = null,
-    @SerialName("updatedAt") val updatedAt: String? = null,
 
-//    @SerialName("timeCreated") val createdAt: String? = null,
-//    @SerialName("statusChangeTime") val updatedAt: String? = null,
+@Serializable
+data class Participant(
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("id")
+    val id: String
+)
 
 
-//    val username: String,
-//    @SerialName("app_version") val appVersion: String,
-//    val localId: String,
 
-//    val emailsCount: Int = 0,
-//    val whatsappCount: Int = 0,
-//    val telegramCount: Int = 0,
-//    val instagramCount: Int = 0,
-//
-//    val editableFields: List<String>? = null,
-//
-//    //Original items from megaplan
+
+//Megaplan original API
+//@Serializable
+//data class TaskResponse(
 //    val contentType: String, // Всегда Task
-
+//    val isUrgent: Boolean? = null,
 //    val isNegotiation: Boolean? = null,
 //    val negotiationItems: List<NegotiationItem>? = null,
 //    val negotiationItemsCount: Int? = null,
@@ -92,26 +111,29 @@ public data class TaskResponse(
 //    val finalRating: Int? = null,
 //    val messagesCount: Int? = null,
 //    val humanNumber: Int? = null,
-//
+//    val name: String,
+//    val subject: String,
+//    val isTemplate: Boolean? = null,
+//    val originalTemplate: Task? = null,
 //
 //    val templateUsersCount: Int? = null,
 //    val isTemplateOwnerCurrentUser: Boolean? = null,
 //    val owner: Employee,
-    val responsible: Responsible,
+//    val responsible: Responsible,
 //
 //
 //    val deadlineReminders: List<Reminder>? = null,
 //    val deadlineRemindersCount: Int? = null,
 //    val isOverdue: Boolean? = null,
 //    val activity: String? = null,
-
-//@@@    val templateUsers: /*List<User>*/String? = null,
-//@@@    val deadline: String? = null,
-//@@@    val auditors: List<User>? = null,
-//@@@    val auditorsCount: Int? = null,
-//@@@    val executors: /*List<User>*/String? = null,
-//@@@    val executorsCount: Int? = null,
-//@@@    val participants: /*List<User>*/String? = null,
+//
+//    val templateUsers: /*List<User>*/String? = null,
+//    val deadline: String? = null,
+//    val auditors: /*List<User>*/String? = null,
+//    val auditorsCount: Int? = null,
+//    val executors: /*List<User>*/String? = null,
+//    val executorsCount: Int? = null,
+//    val participants: /*List<User>*/String? = null,
 //    val participantsCount: Int? = null,
 //    val completed: Int? = null,
 //    val attaches: String? = null,
@@ -125,7 +147,7 @@ public data class TaskResponse(
 //    val executorsCanEditExtFields: Boolean? = null,
 //    val auditorsCanEditExtFields: Boolean? = null,
 //    val actualWork: DateInterval? = null,
-
+//
 //    val relationLinksCount: Int? = null,
 //    val relationLinks: /*List<RelationLink>*/String? = null,
 //    val links: /*List<RelationLink>*/String? = null,
@@ -175,48 +197,112 @@ public data class TaskResponse(
 //    val todosCount: Int? = null,
 //    val actualTodosCount: Int? = null,
 //    val finishedTodosCount: Int? = null
-) {
+//)
 
-
-    public fun getStatus(): TaskStatus {
-
-        //assigned  "status": "assigned",
-
-        var completed = !this.synced.isNullOrEmpty() && !this.megaplanId.isNullOrEmpty()
-        println("COMPLETED ?? $completed")
-        //@@@@
-        //return TaskStatus.COMPLETED
-        return TaskStatus.COMPLETED
-    }
-}
 
 @Serializable
-public data class Attach(
-    val name: String,
-    val type: String,
-    val url: String
+data class NegotiationItem(
+    val type: String, // Тип согласования
+    val name: String
 )
 
+@Serializable
+data class Task(
+    val id: String,
+    val name: String
+)
 
-//data class TaskResponse(
-//    val meta: Meta,
-//    val data: List<FileData>
-//)
-//
-//data class Meta(
-//    val status: Int,
-//    val errors: List<String>
-//)
-//
-//data class FileData(
-//    val contentType: String,
-//    val id: String,
-//    val name: String,
-//    val mimeType: String,
-//    val extension: String,
-//    val size: Int,
-//    val timeCreated: String,
-//    val path: String,
-//    val possibleActions: List<String>,
-//    val metadata: Any? // Если структура metadata станет известна, замените Any на конкретный тип
-//)
+@Serializable
+data class ParentEntity(
+    val type: String,
+    val id: String
+)
+
+@Serializable
+data class Project(
+    val id: String,
+    val name: String
+)
+
+@Serializable
+data class TaskRights(
+    val canEdit: Boolean,
+    val canDelete: Boolean
+)
+
+@Serializable
+data class Bonus(
+    val id: String,
+    val amount: Double
+)
+
+@Serializable
+data class Schedule(
+    val start: DateTime,
+    val end: DateTime
+)
+
+@Serializable
+data class Comment(
+    val id: String,
+    val text: String,
+    val createdAt: DateTime
+)
+
+@Serializable
+data class DateInterval(
+    val start: DateTime,
+    val end: DateTime
+)
+
+@Serializable
+data class DateTime(
+    val dateTime: String,
+
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("value")
+    val value: String
+)
+
+@Serializable
+data class Employee(
+    val id: String,
+    val name: String
+)
+
+@Serializable
+data class Reminder(
+    val message: String,
+    val time: DateTime
+)
+
+@Serializable
+data class Tag(
+    val name: String
+)
+
+@Serializable
+data class FinOperation(
+    val amount: Double,
+    val description: String
+)
+
+@Serializable
+data class AttachesInfo(
+    val type: String,
+    val size: Long
+)
+
+@Serializable
+data class Todo(
+    val id: String,
+    val taskId: String,
+    val name: String
+)
+
+@Serializable
+data class UserCreated(
+    val type: String, // Employee, ContractorHuman, etc.
+    val id: String
+)

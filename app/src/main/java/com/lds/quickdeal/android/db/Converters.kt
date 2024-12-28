@@ -1,7 +1,8 @@
 package com.lds.quickdeal.android.db
 
 import androidx.room.TypeConverter
-import com.lds.quickdeal.android.entity.TaskStatus
+
+import com.lds.quickdeal.megaplan.entity.TaskStatus
 
 class Converters {
 

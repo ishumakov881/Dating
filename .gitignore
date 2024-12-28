@@ -15,3 +15,5 @@
 local.properties
 /.idea
 /shared/build
+/composeApp/build
+/*/build
