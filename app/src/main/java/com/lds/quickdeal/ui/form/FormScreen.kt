@@ -60,6 +60,7 @@ import androidx.compose.runtime.mutableStateOf
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 
 import androidx.compose.ui.Alignment
@@ -148,6 +149,7 @@ fun FormScreen(
     LaunchedEffect(_taskId) {
         viewModel.setTaskForEditing(_taskId)
     }
+
 
 
     var context = LocalContext.current
@@ -249,6 +251,10 @@ fun FormScreen(
 
     val icon = painterResource(id = R.drawable.ic_settings)
 
+
+
+    val servers by viewModel.servers.collectAsState()
+    val selectedServer by viewModel.selectedServer.collectAsState()
 
     //Camera
 //    val photoLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()
@@ -591,6 +597,15 @@ fun FormScreen(
                             }
                         }
                     }
+
+
+                    ServerDropdown(
+                        servers = servers,
+                        selectedServer = selectedServer,
+                        onServerSelected = { server ->
+                            viewModel.setServer(server)
+                        }
+                    )
                 }
 
                 //=========================

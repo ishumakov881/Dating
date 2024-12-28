@@ -84,24 +84,24 @@ class SettingsViewModel @Inject constructor(
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            try {
-                val response = authRepository.getAccessToken(username, password)
-                if (response.isSuccess) {
-                    val authResponse = response.getOrThrow()
-                    val accessToken = authResponse.access_token
-                    authRepository.saveUserSession(username, authResponse)
-                    onSuccess(authResponse)
-                } else {
-                    val error = response.exceptionOrNull()
-                    val errorMessage = error?.message ?: "Неизвестная ошибка"
-                    println("--> Error: $errorMessage")
-                    onError("Ошибка авторизации: $errorMessage")
-                }
-            } catch (e: Exception) {
-                val errorMessage = e.message ?: "Неизвестная ошибка"
-                println("--> Exception: $errorMessage")
-                onError("Ошибка авторизации: $errorMessage")
-            }
+//            try {
+//                val response = authRepository.getAccessToken(username, password, server = _selectedServer.value,)
+//                if (response.isSuccess) {
+//                    val authResponse = response.getOrThrow()
+//                    val accessToken = authResponse.access_token
+//                    authRepository.saveUserSession(username, authResponse)
+//                    onSuccess(authResponse)
+//                } else {
+//                    val error = response.exceptionOrNull()
+//                    val errorMessage = error?.message ?: "Неизвестная ошибка"
+//                    println("--> Error: $errorMessage")
+//                    onError("Ошибка авторизации: $errorMessage")
+//                }
+//            } catch (e: Exception) {
+//                val errorMessage = e.message ?: "Неизвестная ошибка"
+//                println("--> Exception: $errorMessage")
+//                onError("Ошибка авторизации: $errorMessage")
+//            }
         }
     }
 }

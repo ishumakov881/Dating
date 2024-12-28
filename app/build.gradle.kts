@@ -194,6 +194,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.firebase.crashlytics.ktx)
     implementation(libs.firebase.analytics.ktx)
+    implementation(project(":shared"))
     ksp(libs.androidx.room.compiler)
     implementation(libs.room.ktx)
 

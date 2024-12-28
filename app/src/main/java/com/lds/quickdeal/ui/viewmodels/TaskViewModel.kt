@@ -18,13 +18,15 @@ import br.com.frazo.audio_services.recorder.AudioRecorder
 import br.com.frazo.audio_services.recorder.AudioRecordingData
 import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import com.lds.quickdeal.BuildConfig
+import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.Const.Companion.DEFAULT_OWNERS_
 import com.lds.quickdeal.android.db.ResponsibleWrapper
 import com.lds.quickdeal.android.db.TaskDao
+import com.lds.quickdeal.android.entity.TaskResponse
 import com.lds.quickdeal.android.entity.TaskStatus
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.megaplan.entity.TaskRequest
-import com.lds.quickdeal.megaplan.entity.TaskResponse
+
 import com.lds.quickdeal.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -53,11 +55,21 @@ class TaskViewModel
     private val taskDao: TaskDao
 ) : ViewModel() {
 
+
     private val _owners = MutableStateFlow(DEFAULT_OWNERS_)
     val owners: StateFlow<List<ResponsibleWrapper>> = _owners
 
     private val _selectedResponsible = MutableStateFlow<ResponsibleWrapper?>(null)
     val selectedResponsible: StateFlow<ResponsibleWrapper?> = _selectedResponsible
+
+
+    //=============================================================
+    private val _servers = MutableStateFlow(Const.SERVER_LIST)
+    val servers: StateFlow<List<String>> = _servers
+
+    private val _selectedServer = MutableStateFlow<String>("")
+    val selectedServer: StateFlow<String> = _selectedServer
+
 
     fun updateResponsible(owner: ResponsibleWrapper) {
         _selectedResponsible.value = owner
@@ -98,6 +110,7 @@ class TaskViewModel
 
     init {
         _currentTask.value = createEmptyTask()
+        _selectedServer.value= _servers.value[0]
     }
 
 //    private fun loadOwners() {
@@ -168,6 +181,7 @@ class TaskViewModel
             try {
                 _isTaskRunning.postValue(true)
                 val response = taskRepository.createOrUpdateTask(
+                    server = _selectedServer.value,
                     taskRequest, _currentTask.value!!._id, selectedFiles, photoUri, shareVideo
                 )
                 if (response.isSuccess) {
@@ -211,7 +225,7 @@ class TaskViewModel
                     _currentTask.value = createEmptyTask()
                 }
                 try {
-                    val loadedOwners = taskRepository.getOwners()
+                    val loadedOwners = taskRepository.getOwners(server = _selectedServer.value)
                     _owners.value = loadedOwners
 
                     _selectedResponsible.value = loadedOwners.find {
@@ -328,5 +342,9 @@ class TaskViewModel
         audioPlayer.stop()
         currentAudioFile?.delete()
         _audioNoteStatus.value = AudioNoteStatus.HAVE_TO_RECORD
+    }
+
+    fun setServer(server: String) {
+        _selectedServer.value = server
     }
 }

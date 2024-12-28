@@ -34,13 +34,13 @@ class TaskListViewModel @Inject constructor(
            if(localRepo){
                _tasks.value = taskDao.getAllTasks()
            }else{
-               val result = repository.getAllTasks()
-               if (result.isSuccess) {
-                   _tasks.postValue(result.getOrDefault(emptyList()))
-               } else {
-                   println(result.exceptionOrNull()?.message ?: "Unknown error")
-                   //_error.postValue(result.exceptionOrNull()?.message ?: "Unknown error")
-               }
+//               val result = repository.getAllTasks(server = _selectedServer.value)
+//               if (result.isSuccess) {
+//                   _tasks.postValue(result.getOrDefault(emptyList()))
+//               } else {
+//                   println(result.exceptionOrNull()?.message ?: "Unknown error")
+//                   //_error.postValue(result.exceptionOrNull()?.message ?: "Unknown error")
+//               }
            }
         }
     }

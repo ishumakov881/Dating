@@ -31,7 +31,7 @@ class AuthRepository @Inject constructor(
 //    }
 
 
-    suspend fun getAccessToken(megaplanUserName: String, password: String): Result<AuthResponse> {
+    suspend fun getAccessToken(megaplanUserName: String, password: String, server: String): Result<AuthResponse> {
 
         val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
         val tmpName = prefs.getString(SettingsPreferencesKeys.AD_USERNAME, null)
@@ -60,7 +60,7 @@ class AuthRepository @Inject constructor(
         // Выполняем запрос на сервер, если токена нет или он истёк.
 
 
-        val response: HttpResponse = client.post(Const.API_URL + "/api/v3/auth/access_token") {
+        val response: HttpResponse = client.post(server + "/api/v3/auth/access_token") {
             setBody(
                 listOf(
                     "username" to megaplanUserName,

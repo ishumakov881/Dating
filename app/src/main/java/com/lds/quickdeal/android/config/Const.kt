@@ -1,5 +1,6 @@
 package com.lds.quickdeal.android.config
 
+import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.db.ResponsibleWrapper
 
 class Const {
@@ -21,7 +22,23 @@ class Const {
         val DB_NAME: String = "task_database_4"
 
         //Prod Server
-        val API_URL = "http://94.158.46.179:90"
+        //val API_URL = "http://94.158.46.179:90"
+
+
+//        94.158.46.179:90
+
+        val SERVER_LIST = if (BuildConfig.DEBUG) {
+            listOf(
+                "http://94.158.46.179:90",       //prod
+                "http://10.0.20.179:90"   //dev
+            )
+        } else {
+            listOf(
+                "http://94.158.46.179:90",       //prod
+                "http://10.0.20.179:90"   //dev
+            )
+        }
+
         var API_TASK = "/megaplan/task"
 
         //var API_UPLOAD = "/megaplan/upload"

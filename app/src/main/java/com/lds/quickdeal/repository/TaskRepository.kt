@@ -11,6 +11,7 @@ import com.lds.quickdeal.android.db.ResponsibleWrapper
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys.SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN
 import com.lds.quickdeal.android.db.TaskDao
+import com.lds.quickdeal.android.entity.TaskResponse
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TaskUtils.Companion.appendTaskRequest
 import com.lds.quickdeal.android.utils.TimeUtils
@@ -18,7 +19,6 @@ import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Responsible
 
 import com.lds.quickdeal.megaplan.entity.TaskRequest
-import com.lds.quickdeal.megaplan.entity.TaskResponse
 
 
 import com.lds.quickdeal.network.TaskErrorResponse
@@ -72,6 +72,7 @@ class TaskRepository @Inject constructor(
 //    }
 
     suspend fun createOrUpdateTask(
+        server: String,
         taskRequest: TaskRequest,
         taskId: Long,
         selectedFiles: List<MPFile<Any>>?, photoUri: Uri?,
@@ -152,7 +153,7 @@ class TaskRepository @Inject constructor(
 
 
         try {
-            val response: HttpResponse = client.post("${Const.API_URL}${Const.API_UPLOAD}") {
+            val response: HttpResponse = client.post("$server${Const.API_UPLOAD}") {
                 setBody(
                     MultiPartFormDataContent(
                         formData {
@@ -438,7 +439,6 @@ class TaskRepository @Inject constructor(
 
                     if (BuildConfig.DEBUG) {
                         println("ОШИБКА СЕРВЕРА: " + errorResponse.toString())
-                        println("ОШИБКА СЕРВЕРА: " + errorResponse.message)
                     }
 
                     Result.failure(Exception(msg))
@@ -460,12 +460,12 @@ class TaskRepository @Inject constructor(
             ?: "application/octet-stream"
     }
 
-    suspend fun getAllTasks(): Result<List<UploaderTask>> {
+    suspend fun getAllTasks(server: String): Result<List<UploaderTask>> {
         val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
         val username = prefs.getString(SettingsPreferencesKeys.AD_USERNAME, null)
         try {
             val response: HttpResponse =
-                client.get("${Const.API_URL}/megaplan/task_list?username=$username")
+                client.get("$server/megaplan/task_list?username=$username")
             return if (response.status.isSuccess()) {
 
                 try {
@@ -527,9 +527,9 @@ class TaskRepository @Inject constructor(
 
     }
 
-    suspend fun getOwners(): List<ResponsibleWrapper> {
+    suspend fun getOwners(server: String): List<ResponsibleWrapper> {
         return try {
-            var response: HttpResponse = client.get("${Const.API_URL}/megaplan/users")
+            var response: HttpResponse = client.get("$server/megaplan/users")
 
             return if (response.status.isSuccess()) {
 

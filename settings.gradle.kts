@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "QuickDeal"
 include(":app")
-//include(":shared")
+include(":shared")
 
 include(":desktop")
 //include(":androidappupdater")
