@@ -8,5 +8,6 @@
     <string name="appupdater_please_install">Пожалуйста, установите</string>
     <string name="appupdater_or">или</string>
     <string name="appupdater_download_from_store">Скачать из магазина</string>
+    <string name="update_dialog_desc">Доступна новая версия приложения. Хотите обновить?</string>
 
 </resources>

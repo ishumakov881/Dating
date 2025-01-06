@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
                         store = Store.FDROID,
                         title = "Обновить",
                         packageName = packageName,
-                        icon = com.pouyaheydari.appupdater.core.R.drawable.appupdater_ic_fdroid,
+                        icon = coreR.drawable.appupdater_ic_fdroid,
                         url = FDROID_URL,
                     ),
                 )
@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
                     /*appVersionInfo != null && appVersionInfo.versionName != null && isNewVersionAvailable(
                             currentVersion, appVersionInfo.versionName*/
 
-                    var isNew = isNewVersionAvailable(currentVersionCode, appVersionCode)
+                    val isNew = isNewVersionAvailable(currentVersionCode, appVersionCode)
                     println("Current: ${currentVersionCode}, New version: $appVersionCode $isNew")
 
                     if (isNew) {
@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
                         UpdaterDialogData(
 
                             dialogTitle = stringResource(id = R.string.app_name),
-                            dialogDescription = "Доступна новая версия приложения. Хотите обновить?",
+                            dialogDescription = stringResource(R.string.update_dialog_desc),
                             storeList = storeListItems,
                             theme = Theme.SYSTEM_DEFAULT,
                             onDismissRequested = {
