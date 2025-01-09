@@ -1,8 +1,10 @@
-package com.lds.quickdeal.network
+package com.lds.quickdeal.repository
 
 import android.content.Context
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.SettingsPreferencesKeys
+import com.lds.quickdeal.network.AuthErrorResponse
+import com.lds.quickdeal.network.AuthResponse
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -12,7 +14,7 @@ import io.ktor.http.*
 import javax.inject.Inject
 
 
-class AuthRepository @Inject constructor(
+class MegaplanAuthRepository @Inject constructor(
     private val client: HttpClient,
     private val context: Context
 ) {

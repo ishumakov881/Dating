@@ -434,8 +434,9 @@ fun FormScreen(
                     }),
 
                     title = {
+                        //println("Task: $currentTask")
                         Text(
-                            text = if (currentTask.isNewTask()) "Создать заявку" else "Заявка №${currentTask?.megaplanId}"
+                            text = if (currentTask.isNewTask()) "Создать заявку" else "Заявка №${currentTask.megaplanId}"
                         )
                     },
                     actions = {
@@ -558,7 +559,7 @@ fun FormScreen(
                                                         .clip(CircleShape),
                                                     contentScale = ContentScale.Crop,
                                                     onError = { error ->
-                                                        println("AsyncImage Ошибка загрузки аватара для ${owner.description}: ${error.result.throwable.message}")
+                                                        println("AsyncImage Ошибка загрузки аватара для ${owner}: ${error.result.throwable.message}")
                                                     }
                                                 )
                                                 //Text("${owner.avatar}")

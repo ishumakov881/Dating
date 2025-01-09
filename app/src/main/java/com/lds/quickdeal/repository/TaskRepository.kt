@@ -394,8 +394,7 @@ class TaskRepository @Inject constructor(
                     println("@Request: ${taskRequest.megaplanId} | $responsibleId")
 
 
-                    println("@@@@@@@@@@@@@@@ ${taskResponse.synced}  ${taskResponse.megaplanId}")
-                    println("@@@@@@@@@@@@@@@ ${taskResponse.name}  ${taskResponse.subject}")
+
 
 
                     // Сохраняем задачу в базе данных, если ответ успешный
@@ -413,6 +412,17 @@ class TaskRepository @Inject constructor(
                         , responsibleId = responsibleId
                     )
 
+                    println("@@@@@@@@@@@@@@@ ${taskResponse.synced}")
+                    println("@@@@@@@@@@@@@@@ ${taskResponse.name}  ${taskResponse.subject}")
+                    println("Отправляем ID ${task.megaplanId} | Получаем ID ${taskResponse.megaplanId}")
+
+
+
+                    if (taskResponse.megaplanId.isEmpty()){
+                        //Result.failure<String>(Exception("Сер"))
+                    }else{
+
+                    }
 
                     if (taskRequest.megaplanId.isEmpty()) {
                         taskDao.insert(task)
@@ -420,7 +430,7 @@ class TaskRepository @Inject constructor(
                         task._id = taskId
                         task.megaplanId = taskRequest.megaplanId
                         taskDao.update(task)
-                        println("isnew-> ${taskRequest.name} ${task._id} ${task.megaplanId}")
+                        println("Обновляем таску-> ${taskRequest.name} ${task._id} ${task.megaplanId}")
                         //taskDao.updateByMegaplanId(taskRequest.megaplanId, taskRequest.name,taskRequest.subject)
                         //taskDao.updateById(..., taskRequest.name,taskRequest.subject)
                     }

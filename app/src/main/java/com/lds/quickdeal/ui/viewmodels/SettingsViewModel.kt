@@ -4,7 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lds.quickdeal.network.AuthRepository
+import com.lds.quickdeal.repository.MegaplanAuthRepository
 import com.lds.quickdeal.network.AuthResponse
 import com.lds.quickdeal.repository.Settings
 import com.lds.quickdeal.repository.SettingsRepository
@@ -16,7 +16,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
 
     private val settingsRepository: SettingsRepository,
-    private val authRepository: AuthRepository,
+    private val authRepository: MegaplanAuthRepository,
     private val context: Context
 
 ) : ViewModel() {

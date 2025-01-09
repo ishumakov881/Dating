@@ -3,7 +3,7 @@ package com.lds.quickdeal.android.di
 import android.content.Context
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.db.TaskDao
-import com.lds.quickdeal.network.AuthRepository
+import com.lds.quickdeal.repository.MegaplanAuthRepository
 import com.lds.quickdeal.repository.TaskRepository
 import dagger.Module
 import dagger.Provides
@@ -20,7 +20,6 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
-import io.ktor.client.request.request
 import io.ktor.serialization.gson.gson
 import okhttp3.OkHttpClient
 import java.net.InetSocketAddress
@@ -91,8 +90,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(context: Context, client: HttpClient): AuthRepository {
-        return AuthRepository(client, context)
+    fun provideAuthRepository(context: Context, client: HttpClient): MegaplanAuthRepository {
+        return MegaplanAuthRepository(client, context)
     }
 
     @Provides

@@ -1,8 +1,8 @@
 package com.lds.quickdeal.megaplan.entity
 
 public enum class TaskStatus {
-    COMPLETED,
+    COMPLETED,//Завершена
     NONE,
-    REACHED_SERVER,
-    REACHED_MEGA_PLAN
+    REACHED_SERVER, //"Отправлена на сервер"
+    REACHED_MEGA_PLAN //Дошла в мегаплан
 }

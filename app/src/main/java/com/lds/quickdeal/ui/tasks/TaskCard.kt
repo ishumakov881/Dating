@@ -65,6 +65,10 @@ fun TaskCard(
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+
+                TaskStatusIndicator(context, task)
+
+
                 Text(
                     text = buildAnnotatedString {
                         append(task.name)
@@ -107,52 +111,8 @@ fun TaskCard(
 //                        }
                 )
 
-                // Индикатор статуса задачи
 
-                var contentDescription = ""
-                var imageVector = Icons.Filled.CheckCircle
-                var tint = Color.Green
-                var toastMessage = "none"
-                when (task.status) {
-
-
-                    TaskStatus.REACHED_SERVER -> {
-                        contentDescription = "Отправлена на сервер"//В процессе
-                        imageVector = Icons.Filled.CheckCircle
-                        toastMessage = "Задача: ${task.name} зарегистрирована на сервере!"
-                        tint = Color.Gray
-                    }
-
-                    TaskStatus.REACHED_MEGA_PLAN -> {
-                        contentDescription = "Дошла в мегаплан"
-                        imageVector = Icons.Filled.CheckCircle
-                        toastMessage = "Задача в мегаплане секретаря"
-                        tint = Color.Yellow
-                    }
-
-                    TaskStatus.COMPLETED -> {
-                        contentDescription = "Завершена"//Выполнена, то есть закрыта кем-то
-                        imageVector = Icons.Filled.CheckCircle
-                        toastMessage = "Задача завершена!"
-                        tint = Color.Green
-                    }
-
-                    else -> {
-
-                    }
-                }
-                Icon(
-                    imageVector = imageVector,
-                    contentDescription = contentDescription,
-                    tint = tint,
-                    modifier = Modifier
-                        .clickable {
-                            Toast.makeText(context, toastMessage, Toast.LENGTH_SHORT).show()
-                        }
-                )
-
-
-                if (task.status == TaskStatus.COMPLETED) {
+                if (task.status == TaskStatus.COMPLETED || task.status == TaskStatus.REACHED_MEGA_PLAN) {
                     if (task.megaplanId.isNotEmpty()) {
                         Box {
                             val FORM_PRESETS = listOf(

@@ -1,9 +1,6 @@
 package com.lds.quickdeal.megaplan.entity
 
 import com.lds.quickdeal.megaplan.response.Task
-import com.lds.quickdeal.megaplan.response.TaskRights
-import com.lds.quickdeal.megaplan.response.Todo
-import com.lds.quickdeal.megaplan.response.UserCreated
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -163,15 +160,28 @@ data class TaskResponse(
 ) {
 
 
-    fun getStatus():  TaskStatus{
+    fun getStatus(): TaskStatus {
 
         //assigned  "status": "assigned",
 
-        var completed = !this.synced.isNullOrEmpty() && !this.megaplanId.isNullOrEmpty()
-        println("COMPLETED ?? $completed")
-        //@@@@
-        //return TaskStatus.COMPLETED
-        return TaskStatus.COMPLETED
+        var reachedMegaplan = !this.synced.isNullOrEmpty() && !this.megaplanId.isNullOrEmpty()
+        //var completed = ...
+
+        println("REACHED_MEGA_PLAN ?? $reachedMegaplan")
+        //println("COMPLETED ?? $reachedMegaplan")
+
+        when {
+            reachedMegaplan -> {
+                return TaskStatus.REACHED_MEGA_PLAN
+            }
+
+            else -> {
+                return TaskStatus.REACHED_SERVER
+            }
+        }
+
+        //return TaskStatus.REACHED_SERVER
+
     }
 }
 
