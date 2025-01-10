@@ -52,6 +52,7 @@ fun MakeDropdownMenu(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable { menuExpanded = true }
                 .align(Alignment.CenterStart), // Размещаем содержимое влево
             verticalAlignment = Alignment.CenterVertically // Центрируем по вертикали
         ) {
@@ -63,7 +64,6 @@ fun MakeDropdownMenu(
             Text(
                 text = title,
                 modifier = Modifier
-                    .clickable { menuExpanded = true }
                     .padding(4.dp)
             )
             Text(

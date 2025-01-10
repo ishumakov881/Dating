@@ -20,6 +20,9 @@ data class TaskRequest(
     @SerialName("megaplanId")
     val megaplanId: String = "",
 
+    @SerialName("mangoDbId")
+    var mangoDbId: String?,
+
     val owner: Owner? = null, // Владелец (Создатель)
     val contentType: String = "Task", // всегда равен "Task"
     var responsible: Responsible? = null, // Ответственный - UserUnion

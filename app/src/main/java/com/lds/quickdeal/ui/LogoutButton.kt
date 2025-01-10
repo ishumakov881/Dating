@@ -14,10 +14,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
-import com.lds.quickdeal.ui.form.logout
+import com.lds.quickdeal.android.di.ExportRepositoryEntryPoint
+import dagger.hilt.android.EntryPointAccessors
+
 
 @Composable
-fun LogoutButton(navController: NavController, context: Context) {
+fun LogoutButton(context: Context, onLogOut:()->Unit) {
+
+
+    val prefs1 = remember {
+        EntryPointAccessors.fromApplication(
+            context, ExportRepositoryEntryPoint::class.java
+        ).getExportRepository()
+    }
+
     val prefs = remember { context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE) }
     val dialogShownCountKey = "dialog_shown_count"
 
@@ -37,10 +47,8 @@ fun LogoutButton(navController: NavController, context: Context) {
                     prefs.edit().putInt(dialogShownCountKey, dialogShownCount + 1).apply()
 
                     // Выполняем логику выхода
-                    logout(context)
-                    navController.navigate("login") {
-                        popUpTo("form") { inclusive = true }
-                    }
+                    prefs1.logout()
+                    onLogOut()
                 }) {
                     Text("Да")
                 }
@@ -60,10 +68,8 @@ fun LogoutButton(navController: NavController, context: Context) {
             showDialog = true
         } else {
             // Если диалог уже показан дважды, сразу выполняем выход
-            logout(context)
-            navController.navigate("login") {
-                popUpTo("form") { inclusive = true }
-            }
+            prefs1.logout()
+            onLogOut()
         }
     }) {
         Icon(imageVector = Icons.Filled.Logout, contentDescription = "Выход")

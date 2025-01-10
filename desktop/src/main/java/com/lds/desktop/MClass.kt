@@ -16,8 +16,8 @@ object MClass {
 
 
     var SYSTEM_TOKEN =
-        "NTQ0NjNjMDVlNGQwMjUyZDkxMzI2OTRjZjA4ZGY3NTM5NmQ3MjE1NWYwMmUwZWY3OGZhZGUxNTM2MzU1MDk3Mg"
-    var USER_TOKEN = "YTM0MjY5MGRjZWIxYzNjZjRjZDJhNmZiOWIxYTcwMWY0OWIyMGNjNGRjN2VmNzQ1YzAzMTRjNGE0YmVjZDU4MA"
+        "ZTg4NzJkOGNhZjVhYjIxMjQxOWM3MTNkOTA0NTUxYzU0NDdkNWIwYWQyYTg0MWM1MDBmNGJmZTA2YmZlOWYyNw"
+    var USER_TOKEN = "MWQ4ZmE5ZDVmYTQ3MDI4MTdiZDU4ZmIzNDhjZDZhMjQwN2E0Nzg0NWZmYTQ0N2VhZDA4ZDA5MDAwNTJjMGVhYQ"
 
 
     fun doAction(taskId: Int) = runBlocking {
@@ -70,7 +70,7 @@ object MClass {
         println("Hello World")
         //doAction(11111)
 
-        getAllTasks("Test")
+        getAllTasks("Задача ")//test
     }
 
     private fun getAllTasks(s: String) = runBlocking {
@@ -106,7 +106,7 @@ object MClass {
             val authResponse: TaskResponse = response0.body()
             authResponse.data?.forEach({
 
-                if (it.name?.contains("test")!! || it.name?.contains("Test")!!) {
+                if (it.name?.contains("test")!! || it.name?.contains("Test")!!|| it.name?.contains("Задача ")!!) {
                     println("${it.name} ${it.id}")
                     it.id?.let { it1 -> doAction(it1.toInt()) }
                 }

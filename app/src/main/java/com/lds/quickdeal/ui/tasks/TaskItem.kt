@@ -50,20 +50,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.lds.quickdeal.android.config.Const
 
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TimeUtils
 import com.lds.quickdeal.ui.screens.DismissBackground
+import com.lds.quickdeal.ui.viewmodels.TaskViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskItem(
-    navController: NavController,
     task: UploaderTask,
     modifier: Modifier = Modifier,
-    onRemove: (UploaderTask) -> Unit
+    onRemove: (UploaderTask) -> Unit,
+    onClick: (task: UploaderTask) -> Unit
+
 ) {
 
     val context = LocalContext.current
@@ -130,13 +134,17 @@ fun TaskItem(
         }
     }
 
-    SwipeToDismissBox(
-        state = dismissState,
-        modifier = modifier,
-        backgroundContent = { DismissBackground(dismissState) },
-        content = {
-            TaskCard(navController, task)
-        })
+    if (Const.LOCAL_REPO) {
+        SwipeToDismissBox(
+            state = dismissState,
+            modifier = modifier,
+            backgroundContent = { DismissBackground(dismissState) },
+            content = {
+                TaskCard(task, onClick)
+            })
+    } else {
+        TaskCard(task, onClick)
+    }
 }
 
 

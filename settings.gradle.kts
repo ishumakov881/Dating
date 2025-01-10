@@ -23,6 +23,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "QuickDeal"
 include(":app")
+//include(":composeApp")
 include(":shared")
 
 include(":desktop")

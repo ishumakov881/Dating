@@ -26,7 +26,8 @@ import com.lds.quickdeal.android.db.TaskDao
 
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.megaplan.entity.TaskRequest
-import com.lds.quickdeal.megaplan.entity.TaskResponse
+
+import com.lds.quickdeal.megaplan.entity.TaskCreateResponse0
 import com.lds.quickdeal.megaplan.entity.TaskStatus
 
 import com.lds.quickdeal.repository.TaskRepository
@@ -111,25 +112,26 @@ class TaskViewModel
 
 
     init {
-        _currentTask.value = createEmptyTask()
-        _selectedServer.value= _servers.value[0]
+        //_currentTask.value = createEmptyTask()
+        _selectedServer.value = _servers.value[0]
     }
 
-//    private fun loadOwners() {
-//        viewModelScope.launch {
-//            try {
-//                val loadedOwners = taskRepository.getOwners()
-//                _owners.value = loadedOwners
-//                _selectedResponsible.value = loadedOwners.getOrNull(0) // Установить первого как выбранного
-//
-//                //@@@ сохранение в базу...
-//
-//            } catch (e: Exception) {
-//                // Обработка ошибок
-//                println("Ошибка загрузки: ${e.message}")
-//            }
-//        }
-//    }
+    private fun loadOwners() {
+        viewModelScope.launch {
+            try {
+                val loadedOwners = taskRepository.getOwners(server = _selectedServer.value)
+                _owners.value = loadedOwners
+                _selectedResponsible.value =
+                    loadedOwners.getOrNull(0) // Установить первого как выбранного
+
+                //@@@ сохранение в базу...
+
+            } catch (e: Exception) {
+                // Обработка ошибок
+                println("Ошибка загрузки: ${e.message}")
+            }
+        }
+    }
 
     fun updateDescription(newDescription: String) {
         val task = _currentTask.value ?: createEmptyTask()
@@ -175,7 +177,7 @@ class TaskViewModel
         photoUri: Uri?,
         shareVideo: Uri?,
 
-        onSuccess: (TaskResponse) -> Unit,
+        onSuccess: (TaskCreateResponse0) -> Unit,
         onError: (String) -> Unit
 
     ) {
@@ -217,38 +219,56 @@ class TaskViewModel
 
     private var isTaskLoaded = false
 
-    fun setTaskForEditing(taskId: String) {
+//    fun setTaskForEditing(taskId: String) {
+//        if (!isTaskLoaded) {
+//            viewModelScope.launch {
+//                if (taskId.isNotEmpty()) {
+//                    val task = taskDao.getTaskById(taskId)
+//                    _currentTask.value = task ?: createEmptyTask()
+//                } else {
+//                    _currentTask.value = createEmptyTask()
+//                }
+//                try {
+//                    _selectedResponsible.value = _owners.value.find {
+//                        it.megaplanUserId == _currentTask.value?.responsibleId
+//                    } ?: _owners.value.firstOrNull()
+//                    //_selectedResponsible.value = loadedOwners.getOrNull(0) // Установить первого как выбранного
+//
+//                    //@@@ сохранение в базу...
+//
+//                } catch (e: Exception) {
+//                    // Обработка ошибок
+//                    println("Ошибка загрузки: ${e.message}")
+//                }
+//            }
+//
+//        }
+//    }
+
+    fun setTaskForEditing(task: UploaderTask?) {
         if (!isTaskLoaded) {
             viewModelScope.launch {
-                if (taskId.isNotEmpty()) {
-                    val task = taskDao.getTaskById(taskId)
-                    _currentTask.value = task ?: createEmptyTask()
+                _currentTask.value = task ?: createEmptyTask()
+
+                if (_selectedResponsible.value == null) {
+                    loadOwners()
                 } else {
-                    _currentTask.value = createEmptyTask()
-                }
-                try {
-                    val loadedOwners = taskRepository.getOwners(server = _selectedServer.value)
-                    _owners.value = loadedOwners
-
-                    _selectedResponsible.value = loadedOwners.find {
+                    _selectedResponsible.value = _owners.value.find {
                         it.megaplanUserId == _currentTask.value?.responsibleId
-                    } ?: loadedOwners.firstOrNull()
+                    } ?: _owners.value.firstOrNull()
                     //_selectedResponsible.value = loadedOwners.getOrNull(0) // Установить первого как выбранного
-
                     //@@@ сохранение в базу...
-
-                } catch (e: Exception) {
-                    // Обработка ошибок
-                    println("Ошибка загрузки: ${e.message}")
                 }
-            }
 
+            }
         }
     }
+
 
     private fun createEmptyTask(): UploaderTask {
         val currentDateTime = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return UploaderTask(
+            //_id = -1,
             name = "Задача $currentDateTime",
             subject = if (BuildConfig.DEBUG) "Test Description" else "",
             isUrgent = false,
@@ -256,7 +276,9 @@ class TaskViewModel
             createdAt = "",
             updatedAt = "",
             megaplanId = "",
-            responsibleId = ""
+            responsibleId = "",
+            localId = "",
+            synced = ""
         )
     }
 
@@ -348,4 +370,6 @@ class TaskViewModel
     fun setServer(server: String) {
         _selectedServer.value = server
     }
+
+
 }

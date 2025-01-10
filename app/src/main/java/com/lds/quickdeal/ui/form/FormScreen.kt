@@ -60,7 +60,6 @@ import androidx.compose.runtime.mutableStateOf
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 
 import androidx.compose.ui.Alignment
@@ -74,13 +73,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
+
 import br.com.frazo.audio_services.player.AudioPlayingData
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -91,6 +91,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.R
 import com.lds.quickdeal.android.config.Const
 
@@ -102,6 +103,7 @@ import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Responsible
 import com.lds.quickdeal.megaplan.entity.TaskRequest
 import com.lds.quickdeal.megaplan.entity.TaskStatus
+import com.lds.quickdeal.repository.SettingsRepository
 import com.lds.quickdeal.ui.AddFileOrCaptureButton
 import com.lds.quickdeal.ui.LoadingAnimation
 import com.lds.quickdeal.ui.LogoutButton
@@ -136,26 +138,48 @@ lateinit var fusedLocationClient: FusedLocationProviderClient
 @ExperimentalMaterial3Api
 @Composable
 fun FormScreen(
-    navController: NavController,
+    onBackFromFormScreen: () -> Unit,
+    onTaskCreated: () -> Unit,
+    onTaskList: () -> Unit, onLogOut: () -> Unit,
     _taskId: String = "",
-    viewModel: TaskViewModel = hiltViewModel()
+    sharedViewModel: TaskViewModel
 ) {
 
-    val currentTask by viewModel.currentTask.observeAsState(
+
+    /*    val currentTask by viewModel.currentTask.observeAsState(
         UploaderTask(
             -1, "", "", false, TaskStatus.NONE, "", "", "", ""
         )
     )
+
+
     LaunchedEffect(_taskId) {
         viewModel.setTaskForEditing(_taskId)
+    }*/
+
+//    var currentTask = sharedViewModel.currentTask.value
+
+
+    val currentTask by sharedViewModel.currentTask.observeAsState(
+        UploaderTask(
+            -100L, "", "", false, TaskStatus.NONE, "", "", "",
+            "", "",null
+        )
+    )
+
+    println(currentTask)
+
+    LaunchedEffect(currentTask._id) {
+        if (currentTask._id == -100L) {
+            sharedViewModel.setTaskForEditing(null)
+            println("=====")
+        }
     }
 
-
-
-    var context = LocalContext.current
+    val context = LocalContext.current
     val geocoder = Geocoder(context, Locale.getDefault())
 
-    val isTaskRunning by viewModel.isTaskRunning.observeAsState(false)
+    val isTaskRunning by sharedViewModel.isTaskRunning.observeAsState(false)
 
     //var description by remember { mutableStateOf(if (BuildConfig.DEBUG) "Test Description" else "") }
     //var description by rememberSaveable { mutableStateOf(if (BuildConfig.DEBUG) "Test Description" else "") }
@@ -167,9 +191,9 @@ fun FormScreen(
     var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
     var address by rememberSaveable { mutableStateOf<String>("Адрес не определён") }
 
-    val audioNoteStatus by viewModel.audioStatus.collectAsState()
-    val audioPlayingData by viewModel.audioNotePlayingData.collectAsState()
-    val audioData by viewModel.audioRecordFlow.collectAsState()
+    val audioNoteStatus by sharedViewModel.audioStatus.collectAsState()
+    val audioPlayingData by sharedViewModel.audioNotePlayingData.collectAsState()
+    val audioData by sharedViewModel.audioRecordFlow.collectAsState()
 
     val permissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
@@ -244,17 +268,16 @@ fun FormScreen(
 //        mutableStateOf(DEFAULT_OWNERS.getOrNull(0))
 //    }
 
-    val owners by viewModel.owners.collectAsState()
-    val selectedResponsible by viewModel.selectedResponsible.collectAsState()
+    val owners by sharedViewModel.owners.collectAsState()
+    val selectedResponsible by sharedViewModel.selectedResponsible.collectAsState()
 
     var expanded by rememberSaveable { mutableStateOf(false) }
 
     val icon = painterResource(id = R.drawable.ic_settings)
 
 
-
-    val servers by viewModel.servers.collectAsState()
-    val selectedServer by viewModel.selectedServer.collectAsState()
+    val servers by sharedViewModel.servers.collectAsState()
+    val selectedServer by sharedViewModel.selectedServer.collectAsState()
 
     //Camera
 //    val photoLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()
@@ -421,9 +444,7 @@ fun FormScreen(
 
                     navigationIcon = if (!currentTask.isNewTask()) {
                         {
-                            IconButton(onClick = {
-                                navController.popBackStack()
-                            }) {
+                            IconButton(onClick = onBackFromFormScreen) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Закрыть"
@@ -435,8 +456,21 @@ fun FormScreen(
 
                     title = {
                         //println("Task: $currentTask")
+
+
+                        val x = when (currentTask.status) {
+                            TaskStatus.COMPLETED -> "Завершенная заявка"
+                            TaskStatus.NONE -> "Создать заявку"
+                            TaskStatus.REACHED_SERVER -> "Заявка №${currentTask.localId}"
+                            TaskStatus.REACHED_MEGA_PLAN -> "Заявка №${currentTask.megaplanId}"
+
+                            else -> "Заявка №${currentTask.megaplanId}"
+                        }
+
                         Text(
-                            text = if (currentTask.isNewTask()) "Создать заявку" else "Заявка №${currentTask.megaplanId}"
+                            text = x,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     actions = {
@@ -448,9 +482,7 @@ fun FormScreen(
 
 
                         if (currentTask.isNewTask()) {
-                            IconButton(onClick = {
-                                navController.navigate("tasks") // Переход на экран созданных задач
-                            }) {
+                            IconButton(onClick = onTaskList) {
                                 Icon(
                                     imageVector = Icons.Filled.FormatListNumbered, // Иконка в виде списка
                                     contentDescription = "Созданные задачи"
@@ -484,7 +516,7 @@ fun FormScreen(
                         }
 
                         if (currentTask.isNewTask()) {
-                            LogoutButton(navController, context)
+                            LogoutButton(context, onLogOut)
                         }
 
                     }
@@ -492,8 +524,8 @@ fun FormScreen(
 
 
                 //MAIN CONTAINER
-                TitileWithPresetes(currentTask, viewModel)
-                DescriptionWithPresets(currentTask, viewModel)
+                TitileWithPresetes(currentTask, sharedViewModel)
+                DescriptionWithPresets(currentTask, sharedViewModel)
 
 
                 //=========================
@@ -587,7 +619,7 @@ fun FormScreen(
                                             }
                                         },
                                         onClick = {
-                                            viewModel.updateResponsible(owner)
+                                            sharedViewModel.updateResponsible(owner)
                                             expanded = false
                                         }
                                     )
@@ -598,17 +630,17 @@ fun FormScreen(
                             }
                         }
                     }
+                }
 
-
+                if (servers.size > 1) {
                     ServerDropdown(
                         servers = servers,
                         selectedServer = selectedServer,
                         onServerSelected = { server ->
-                            viewModel.setServer(server)
+                            sharedViewModel.setServer(server)
                         }
                     )
                 }
-
                 //=========================
 
 
@@ -877,7 +909,7 @@ fun FormScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     SpeechToTextButton(context) {
-                        viewModel.appendDescription("\n $it")
+                        sharedViewModel.appendDescription("\n $it")
                     }
                 }
 
@@ -898,7 +930,7 @@ fun FormScreen(
                     onClick = {
 
                         if (isTaskRunning) {
-                            viewModel.cancelTask()
+                            sharedViewModel.cancelTask()
                             isLoading = false
                             Toast.makeText(context, "Задача отменена", Toast.LENGTH_SHORT).show()
                         } else {
@@ -917,7 +949,8 @@ fun FormScreen(
                                 , isUrgent = false //Добавили
                                 , latitude = latitude,
                                 longitude = longitude,
-                                megaplanId = currentTask.megaplanId
+                                megaplanId = currentTask.megaplanId,
+                                mangoDbId = currentTask.localId
                             )
                             // ID ответственного | owner = Owner(contentType = "Employee", id = "1000093"),
                             selectedResponsible?.let {
@@ -930,7 +963,7 @@ fun FormScreen(
 
                             //println("[*]$taskRequest")
 
-                            viewModel.createTask(
+                            sharedViewModel.createTask(
                                 taskRequest,
                                 selectedFilesUris,
                                 photoUri,
@@ -951,8 +984,7 @@ fun FormScreen(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
-
-                                    navController.navigate("tasks")
+                                    onTaskCreated()
                                 },
                                 { err ->
                                     isLoading = false
@@ -964,8 +996,15 @@ fun FormScreen(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isTaskRunning) Color.Red else MaterialTheme.colorScheme.primary
+                        //Color.Blue //
 
                     ),
+
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color.Blue, // Синий фон
+//                        contentColor = Color.White   // Белый текст
+//                    ),
+
                     modifier = Modifier
                         .padding(top = 16.dp)
                         .align(Alignment.End)
@@ -1112,15 +1151,6 @@ fun PreviewLoadingAnimation() {
     LoadingAnimation()
 }
 
-
-fun logout(context: Context) {
-    val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
-    prefs.edit().apply {
-        putString(SettingsPreferencesKeys.AD_USERNAME, "")
-        putString(SettingsPreferencesKeys.AD_PASSWORD, "")
-        apply()
-    }
-}
 
 private fun checkPermissionStatus(context: Context, permission: String): Boolean {
     return ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, permission)

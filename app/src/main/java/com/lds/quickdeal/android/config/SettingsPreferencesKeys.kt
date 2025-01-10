@@ -4,10 +4,12 @@ class SettingsPreferencesKeys {
 
     companion object SettingsPreferencesKeys {
 
+
+
         //AD
         const val AD_PASSWORD = "ad_password_"
         const val AD_USERNAME = "ad_username_"
-
+        const val AD_TOKEN = "ad_token"
 
         const val MEGAPLAN_USERNAME = "megaplan_username_"
         const val MEGAPLAN_PASSWORD = "megaplan_password_"

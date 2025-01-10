@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,7 +76,7 @@ fun AddFileOrCaptureButton(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(4.dp),
         horizontalArrangement = Arrangement.Center
     ) {
 //        IconButton(onClick = {
@@ -89,7 +90,9 @@ fun AddFileOrCaptureButton(
 //        }
 
 
-        Button(onClick = {
+        Button(
+
+            onClick = {
 
             //fileLauncher.launch("*/*")
             showFilePicker = true
@@ -108,11 +111,11 @@ fun AddFileOrCaptureButton(
                 horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.AttachFile,
-                    contentDescription = "Прикрепить файлы",
-                    tint = Color.White
-                )
+//                Icon(
+//                    imageVector = Icons.Default.AttachFile,
+//                    contentDescription = "Прикрепить файлы",
+//                    tint = Color.White
+//                )
                 Text(
                     text = "Файлы",
                     style = MaterialTheme.typography.button
@@ -143,11 +146,11 @@ fun AddFileOrCaptureButton(
                 horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.PhotoCamera,
-                    contentDescription = "Сделать фото",
-                    tint = Color.White
-                )
+//                Icon(
+//                    imageVector = Icons.Default.PhotoCamera,
+//                    contentDescription = "Сделать фото",
+//                    tint = Color.White
+//                )
                 Text(
                     text = "Фото",
                     style = MaterialTheme.typography.button
@@ -181,11 +184,11 @@ fun AddFileOrCaptureButton(
                 horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Videocam,
-                    contentDescription = "Записать видео",
-                    tint = Color.White
-                )
+//                Icon(
+//                    imageVector = Icons.Default.Videocam,
+//                    contentDescription = "Записать видео",
+//                    tint = Color.White
+//                )
                 Text(
                     text = "Видео",
                     style = MaterialTheme.typography.button

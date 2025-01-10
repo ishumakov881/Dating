@@ -8,7 +8,10 @@ import com.lds.quickdeal.megaplan.entity.TaskStatus
 
 @Entity(tableName = "tasks")
 data class UploaderTask(
+
     @PrimaryKey(autoGenerate = true) var _id: Long = 0,
+
+
     @ColumnInfo(name = "name") var name: String,
     @ColumnInfo(name = "subject") var subject: String,
     @ColumnInfo(name = "is_urgent") val isUrgent: Boolean,
@@ -22,11 +25,17 @@ data class UploaderTask(
 
 
     //+
-    @ColumnInfo(name = "responsibleId") var responsibleId: String
-
+    @ColumnInfo(name = "responsibleId") var responsibleId: String,
+    @ColumnInfo(name = "localId") var localId: String? = null, //Id from server db
+    @ColumnInfo(name = "synced") val synced: String?
 
 ) {
     fun isNewTask(): Boolean {
-        return _id <= 0
+
+        //println("Current TAsk " + this)
+
+        //return _id <= 0
+        return megaplanId.isNullOrEmpty()
+
     }
 }

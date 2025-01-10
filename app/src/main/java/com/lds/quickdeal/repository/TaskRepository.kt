@@ -8,8 +8,6 @@ import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const
 import com.lds.quickdeal.android.config.Const.Companion.FILE_KEY
 import com.lds.quickdeal.android.db.ResponsibleWrapper
-import com.lds.quickdeal.android.config.SettingsPreferencesKeys
-import com.lds.quickdeal.android.config.SettingsPreferencesKeys.SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN
 import com.lds.quickdeal.android.db.TaskDao
 
 import com.lds.quickdeal.android.entity.UploaderTask
@@ -17,9 +15,11 @@ import com.lds.quickdeal.android.utils.TaskUtils.Companion.appendTaskRequest
 import com.lds.quickdeal.android.utils.TimeUtils
 import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Responsible
+import com.lds.quickdeal.megaplan.entity.TaskCreateResponse0
+import com.lds.quickdeal.megaplan.entity.TaskListItemResponse
 
 import com.lds.quickdeal.megaplan.entity.TaskRequest
-import com.lds.quickdeal.megaplan.entity.TaskResponse
+import com.lds.quickdeal.megaplan.entity.getPrettyStatus
 
 
 import com.lds.quickdeal.network.TaskErrorResponse
@@ -31,6 +31,7 @@ import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -40,13 +41,15 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.streams.asInput
 import kotlinx.io.IOException
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 class TaskRepository @Inject constructor(
     private val taskDao: TaskDao,
     private var client: HttpClient,
-    private var context: Context
+    private var context: Context,
+    private val prefs: SettingsRepository
 ) {
 
 
@@ -79,7 +82,7 @@ class TaskRepository @Inject constructor(
         selectedFiles: List<MPFile<Any>>?, photoUri: Uri?,
         shareVideo: Uri?
 
-    ): Result<TaskResponse> {
+    ): Result<TaskCreateResponse0> {
 
 
         if (taskRequest.subject.isNullOrEmpty()) {
@@ -118,9 +121,10 @@ class TaskRepository @Inject constructor(
         //,,,,,
 
 
-        val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
-        var accessToken = prefs.getString(PREF_KEY_MEGAPLAN_ACCESS_TOKEN, null)
-        val username = prefs.getString(SettingsPreferencesKeys.AD_USERNAME, null)
+        //var accessToken = prefs.getString(PREF_KEY_MEGAPLAN_ACCESS_TOKEN, null)
+        val username = prefs.getADuserName()
+        val bearerToken = prefs.getBearerToken()
+
 
         //Выбран файл: [AndroidFile(path=/document/msf:1593, platformFile=content://com.android.providers.downloads.documents/document/msf%3A1593), AndroidFile(path=/document/msf:1573, platformFile=content://com.android.providers.downloads.documents/document/msf%3A1573)]
 
@@ -155,11 +159,16 @@ class TaskRepository @Inject constructor(
 
         try {
             val response: HttpResponse = client.post("$server${Const.API_UPLOAD}") {
+                headers {
+                    append("Authorization", "Bearer $bearerToken")
+                }
                 setBody(
                     MultiPartFormDataContent(
                         formData {
                             appendTaskRequest(context, taskRequest)
+
                             append("username", username ?: "")
+
                             selectedFiles?.forEach { file ->
                                 val rawUri = file.platformFile.toString()
                                 val uri = Uri.parse(rawUri)
@@ -387,14 +396,11 @@ class TaskRepository @Inject constructor(
                     //val taskResponse = TaskResponse(Meta(200, listOf()), listOf()) // Предположим, что мы получили TaskResponse
 
                     //Oleg server
-                    val taskResponse: TaskResponse = response.body()
+                    val taskResponse: TaskCreateResponse0 = response.body()
 
 
                     var responsibleId = taskRequest.responsible?.id ?: ""
                     println("@Request: ${taskRequest.megaplanId} | $responsibleId")
-
-
-
 
 
                     // Сохраняем задачу в базе данных, если ответ успешный
@@ -404,35 +410,44 @@ class TaskRepository @Inject constructor(
                         name = taskRequest.name!!,
                         subject = taskRequest.subject!!,
                         isUrgent = false,//????????????????
-                        status = taskResponse.getStatus() // Можно добавить логику для задания статуса задачи
-                        ,
-                        createdAt = taskResponse.createdAt ?: createAtNow,
-                        updatedAt = taskResponse.updatedAt ?: createAtNow,
-                        megaplanId = taskResponse.megaplanId ?: "" // предполагаем, что ID задачи приходит с сервера
-                        , responsibleId = responsibleId
+                        status = getPrettyStatus(
+                            synced = taskResponse.synced,
+                            megaplanId = taskResponse.megaplanId,
+                            status = taskResponse.status
+                        ),
+
+                        createdAt = taskResponse.createdAt() ?: createAtNow,
+                        updatedAt = taskResponse.updatedAt() ?: createAtNow,
+                        megaplanId = taskResponse.megaplanId
+                            ?: "" // предполагаем, что ID задачи приходит с сервера
+                        , responsibleId = responsibleId,
+                        localId = taskResponse.localId, synced = taskResponse.synced
                     )
 
-                    println("@@@@@@@@@@@@@@@ ${taskResponse.synced}")
-                    println("@@@@@@@@@@@@@@@ ${taskResponse.name}  ${taskResponse.subject}")
-                    println("Отправляем ID ${task.megaplanId} | Получаем ID ${taskResponse.megaplanId}")
+                    if (BuildConfig.DEBUG) {
+                        println("@@@@@@@@@@@@@@@ ${taskResponse.synced}")
+                        println("@@@@@@@@@@@@@@@ ${taskResponse.name}  ${taskResponse.subject}")
+                        println("Отправляем ID ${task.megaplanId} | Получаем ID ${taskResponse.megaplanId}")
+                    }
 
 
-
-                    if (taskResponse.megaplanId.isEmpty()){
+                    if (taskResponse.megaplanId.isNullOrEmpty()) {
                         //Result.failure<String>(Exception("Сер"))
-                    }else{
+                    } else {
 
                     }
 
-                    if (taskRequest.megaplanId.isEmpty()) {
-                        taskDao.insert(task)
-                    } else {
-                        task._id = taskId
-                        task.megaplanId = taskRequest.megaplanId
-                        taskDao.update(task)
-                        println("Обновляем таску-> ${taskRequest.name} ${task._id} ${task.megaplanId}")
-                        //taskDao.updateByMegaplanId(taskRequest.megaplanId, taskRequest.name,taskRequest.subject)
-                        //taskDao.updateById(..., taskRequest.name,taskRequest.subject)
+                    if (Const.LOCAL_REPO) {
+                        if (taskRequest.megaplanId.isEmpty()) {
+                            taskDao.insert(task)
+                        } else {
+                            task._id = taskId
+                            task.megaplanId = taskRequest.megaplanId
+                            taskDao.update(task)
+                            println("Обновляем таску-> ${taskRequest.name} ${task._id} ${task.megaplanId}")
+                            //taskDao.updateByMegaplanId(taskRequest.megaplanId, taskRequest.name,taskRequest.subject)
+                            //taskDao.updateById(..., taskRequest.name,taskRequest.subject)
+                        }
                     }
                     Result.success(taskResponse)
 
@@ -472,42 +487,55 @@ class TaskRepository @Inject constructor(
     }
 
     suspend fun getAllTasks(server: String): Result<List<UploaderTask>> {
-        val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
-        val username = prefs.getString(SettingsPreferencesKeys.AD_USERNAME, null)
+
+        val username = prefs.getADuserName()
         try {
-            val response: HttpResponse =
-                client.get("$server/megaplan/task_list?username=$username")
+            val response: HttpResponse = client.get("$server/megaplan/task_list?username=$username")
+            println("Tasks: " + response.bodyAsText())
+
             return if (response.status.isSuccess()) {
 
                 try {
 
+                    //val tasks: List<TaskListItemResponse> = response.body()
 
-                    val tmp: List<TaskResponse> = response.body()
-                    val uploaderTasks: List<UploaderTask> = tmp.map { taskResponse ->
-                        println("${taskResponse.updatedAt} == ${taskResponse.createdAt}")
+                    val json = Json {
+                        ignoreUnknownKeys = true
+                    }
+                    val tasks: List<TaskListItemResponse> =
+                        json.decodeFromString(response.bodyAsText())
+
+                    val uploaderTasks: List<UploaderTask> = tasks.map { taskResponse ->
+                        println("Status--> ${taskResponse.status}")
                         UploaderTask(
                             _id = 0,
+                            localId = taskResponse.localId,
                             name = taskResponse.name,
                             subject = taskResponse.subject,
                             isUrgent = taskResponse.isUrgent
                                 ?: false, // Если isUrgent null, то false
-                            createdAt = taskResponse.createdAt
+                            createdAt = taskResponse.createdAt()
                                 ?: "", // Если createdAt null, то пустая строка
-                            updatedAt = taskResponse.updatedAt
+                            updatedAt = taskResponse.updatedAt()
                                 ?: "", // Если updatedAt null, то пустая строка
-                            megaplanId = taskResponse.megaplanId,
+                            megaplanId = taskResponse.megaplanId ?: "",
 
                             responsibleId = taskResponse.responsible.id,
-                            status = taskResponse.getStatus() // Преобразуем статус
+                            status = getPrettyStatus(
+                                synced = taskResponse.synced,
+                                megaplanId = taskResponse.megaplanId,
+                                status = taskResponse.status
+                            ), synced = taskResponse.synced
                         )
-                    }
 
+                    }
 
                     //Result.success(taskResponse)
                     Result.success(uploaderTasks)
 
 
                 } catch (e: Exception) {
+                    e.printStackTrace()
                     Result.failure(e)
                 }
             } else {

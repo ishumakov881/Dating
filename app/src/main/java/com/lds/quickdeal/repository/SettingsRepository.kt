@@ -12,19 +12,18 @@ import java.util.Locale
 import javax.inject.Inject
 
 
-
 class SettingsRepository @Inject constructor(
     private val context: Context // Передаем Context для доступа к SharedPreferences
 ) {
 
-    private val sharedPreferences: SharedPreferences =
+    private val prefs: SharedPreferences =
         context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
 
     // Метод для получения настроек
     fun getSettings(): Settings {
 
         var username =
-            sharedPreferences.getString(SettingsPreferencesKeys.MEGAPLAN_USERNAME, "") ?: ""
+            prefs.getString(SettingsPreferencesKeys.MEGAPLAN_USERNAME, "") ?: ""
         if (username.isEmpty()) {
             val tmpName = getADuserName()
             if (tmpName != null) {
@@ -36,9 +35,9 @@ class SettingsRepository @Inject constructor(
 
         val password = getMegaPlanPassword()
         val accessToken =
-            sharedPreferences.getString(SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN, "") ?: ""
+            prefs.getString(SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN, "") ?: ""
 
-        val expiresAt = sharedPreferences.getLong(SettingsPreferencesKeys.PREF_KEY_EXPIRES_AT, 0L)
+        val expiresAt = prefs.getLong(SettingsPreferencesKeys.PREF_KEY_EXPIRES_AT, 0L)
         val expiresAtMillis = expiresAt * 1000 // Преобразуем в миллисекунды
 
         // Преобразуем метку времени в читаемую дату
@@ -79,7 +78,7 @@ class SettingsRepository @Inject constructor(
         expiresIn: Long
     ) {
 
-        val editor = sharedPreferences.edit()
+        val editor = prefs.edit()
         editor.putString(SettingsPreferencesKeys.MEGAPLAN_USERNAME, username)
         editor.putString(SettingsPreferencesKeys.MEGAPLAN_PASSWORD, password)
         editor.putString(SettingsPreferencesKeys.PREF_KEY_MEGAPLAN_ACCESS_TOKEN, accessToken)
@@ -89,14 +88,16 @@ class SettingsRepository @Inject constructor(
     }
 
     fun getMegaPlanPassword(): String {
-        return sharedPreferences.getString(SettingsPreferencesKeys.MEGAPLAN_PASSWORD, "") ?: ""
+        return prefs.getString(SettingsPreferencesKeys.MEGAPLAN_PASSWORD, "") ?: ""
     }
 
 
     //AD
-    fun saveADCredential(username: String, password: String): Unit {
-        val editor = sharedPreferences.edit()
+    fun saveADCredential(username: String, password: String, token: String): Unit {
+        val editor = prefs.edit()
         editor.putString(SettingsPreferencesKeys.AD_USERNAME, username)
+        editor.putString(SettingsPreferencesKeys.AD_TOKEN, token)
+
 
         var mpUserName = getMegaPlanUserName()
 
@@ -109,15 +110,36 @@ class SettingsRepository @Inject constructor(
     }
 
     fun getMegaPlanUserName(): String {
-        return sharedPreferences.getString(SettingsPreferencesKeys.MEGAPLAN_USERNAME, "") ?: ""
+        return prefs.getString(SettingsPreferencesKeys.MEGAPLAN_USERNAME, "") ?: ""
     }
 
     fun getADuserName(): String {
-        return sharedPreferences.getString(SettingsPreferencesKeys.AD_USERNAME, BuildConfig.ACTIVE_DIRECTORY_USERNAME) ?: ""
+        return prefs.getString(
+            SettingsPreferencesKeys.AD_USERNAME,
+            BuildConfig.ACTIVE_DIRECTORY_USERNAME
+        ) ?: ""
+    }
+
+    fun getBearerToken(): String {
+        return prefs.getString(SettingsPreferencesKeys.AD_TOKEN, null
+        ) ?: ""
     }
 
     fun getADPassword(): String {
-        return sharedPreferences.getString(SettingsPreferencesKeys.AD_PASSWORD, BuildConfig.ACTIVE_DIRECTORY_PASSWORD) ?: ""
+        return prefs.getString(
+            SettingsPreferencesKeys.AD_PASSWORD,
+            BuildConfig.ACTIVE_DIRECTORY_PASSWORD
+        ) ?: ""
+    }
+
+    fun logout() {
+
+        prefs.edit().apply {
+            putString(SettingsPreferencesKeys.AD_USERNAME, "")
+            putString(SettingsPreferencesKeys.AD_PASSWORD, "")
+            putString(SettingsPreferencesKeys.AD_TOKEN, "")
+            apply()
+        }
     }
 
 }

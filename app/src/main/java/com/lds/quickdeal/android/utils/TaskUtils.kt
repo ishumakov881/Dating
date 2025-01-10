@@ -41,6 +41,7 @@ class TaskUtils {
             taskRequest.name?.let { append("name", it) }
             taskRequest.subject?.let { append("subject", it) }
             append("megaplanId", taskRequest.megaplanId)
+            taskRequest.mangoDbId?.let { append("localId", it) }
 
             append("contentType", "Task")
             append("isTemplate", "false")

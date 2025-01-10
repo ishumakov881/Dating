@@ -4,6 +4,7 @@ import android.content.Context
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.db.TaskDao
 import com.lds.quickdeal.repository.MegaplanAuthRepository
+import com.lds.quickdeal.repository.SettingsRepository
 import com.lds.quickdeal.repository.TaskRepository
 import dagger.Module
 import dagger.Provides
@@ -48,7 +49,10 @@ object AppModule {
         return HttpClient(OkHttp) {
 
             defaultRequest {
-                header("User-Agent", "QuickDeal-"+context.packageName+"-"+BuildConfig.VERSION_NAME)
+                header(
+                    "User-Agent",
+                    "QuickDeal-" + context.packageName + "-" + BuildConfig.VERSION_NAME
+                )
             }
 
 //            install(ContentNegotiation) {
@@ -90,14 +94,29 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(context: Context, client: HttpClient): MegaplanAuthRepository {
-        return MegaplanAuthRepository(client, context)
+    fun provideSettingsRepository(c: Context): SettingsRepository {
+        return SettingsRepository(c)
     }
 
     @Provides
     @Singleton
-    fun provideTaskRepository(context: Context, client: HttpClient, dao : TaskDao): TaskRepository {
-        return TaskRepository(dao, client, context)
+    fun provideAuthRepository(
+        context: Context,
+        client: HttpClient,
+        prefs: SettingsRepository
+    ): MegaplanAuthRepository {
+        return MegaplanAuthRepository(client, context, prefs)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTaskRepository(
+        context: Context,
+        client: HttpClient,
+        dao: TaskDao,
+        prefs: SettingsRepository
+    ): TaskRepository {
+        return TaskRepository(dao, client, context, prefs)
     }
 
 

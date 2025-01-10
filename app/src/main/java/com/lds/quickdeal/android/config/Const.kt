@@ -7,6 +7,8 @@ class Const {
     companion object {
 
 
+        const val LOCAL_REPO = false
+
         const val FDROID_URL = "https://fdroid.lds.online"
         const val FDROID_URL_INDEX = "$FDROID_URL/repo/index-v1.json"
 
@@ -19,7 +21,7 @@ class Const {
         val MEGAPLAN_URL = "https://megaplan.lds.online";
         //var API_TASK = "/api/v3/task"
 
-        val DB_NAME: String = "task_database_4"
+        val DB_NAME: String = "task_database_6"
 
         //Prod Server
         //val API_URL = "http://94.158.46.179:90"
@@ -27,15 +29,20 @@ class Const {
 
 //        94.158.46.179:90
 
+
+        const val SERVER_DEV = "http://10.0.20.179:90"//dev
+        const val SERVER_PROD = "http://94.158.46.179:90"//prod
+
+
         val SERVER_LIST = if (BuildConfig.DEBUG) {
             listOf(
-                "http://94.158.46.179:90",       //prod
-                "http://10.0.20.179:90"   //dev
+                SERVER_PROD,
+                //SERVER_DEV
             )
         } else {
             listOf(
-                "http://94.158.46.179:90",       //prod
-                "http://10.0.20.179:90"   //dev
+                SERVER_PROD,
+                //SERVER_DEV
             )
         }
 

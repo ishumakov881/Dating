@@ -9,8 +9,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lds.quickdeal.BuildConfig
 import com.lds.quickdeal.android.config.Const
-import com.lds.quickdeal.repository.LDAPAuthRepository
+
 import com.lds.quickdeal.repository.MegaplanAuthRepository
+import com.lds.quickdeal.repository.ServerAuthRepository
 import com.lds.quickdeal.repository.SettingsRepository
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,7 +38,7 @@ class AuthViewModel
     val isTaskRunning: LiveData<Boolean> = _isTaskRunning
 
     init {
-        //val prefs = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
+        //
         //accessToken = prefs.getString(PREF_KEY_MEGAPLAN_ACCESS_TOKEN, null)
 
         val username = settingsRepository.getADuserName()
@@ -79,15 +80,17 @@ class AuthViewModel
                 println("AD: $username $password")
             }
 
-            val result = LDAPAuthRepository().login(username, password)
+            //val result = LDAPAuthRepository().login(username, password)
+            val result = ServerAuthRepository().login(username, password)
+
             when {
                 result.isSuccess -> {
                     val data = result.getOrNull() // Получаем успешные данные (если есть)
                     println("Successfully connected and authenticated!")
-                    settingsRepository.saveADCredential(username, password)
+                    settingsRepository.saveADCredential(username, password, data?:"")
 
                     // Если удалось подключиться, логин успешен
-                    onSuccess(data)
+                    onSuccess("")//data
                 }
                 result.isFailure -> {
                     val error = result.exceptionOrNull() // Получаем исключение

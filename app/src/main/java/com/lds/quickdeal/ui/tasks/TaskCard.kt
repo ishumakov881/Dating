@@ -36,16 +36,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TimeUtils
 import com.lds.quickdeal.megaplan.entity.TaskStatus
+import com.lds.quickdeal.ui.viewmodels.TaskViewModel
 
 @Composable
 fun TaskCard(
-    navController: NavController,
-    task: UploaderTask
+    task: UploaderTask,
+    onClick: (task: UploaderTask) -> Unit
 ) {
 
     var context = LocalContext.current
@@ -55,7 +57,7 @@ fun TaskCard(
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .clickable {
-                navController.navigate("form/${task._id}")
+                onClick(task)
             },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
@@ -112,7 +114,7 @@ fun TaskCard(
                 )
 
 
-                if (task.status == TaskStatus.COMPLETED || task.status == TaskStatus.REACHED_MEGA_PLAN) {
+                if (task.status != TaskStatus.REACHED_SERVER && task.status != TaskStatus.NONE) {
                     if (task.megaplanId.isNotEmpty()) {
                         Box {
                             val FORM_PRESETS = listOf(
@@ -168,22 +170,42 @@ fun TaskCard(
             ///
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Отображение времени создания и обновления
-            task.createdAt?.let {
+            var _created = task.createdAt
+            if (_created.isNotEmpty()) {
+                _created = "Дата создания задачи:               ${TimeUtils.formatDate(task.createdAt)}"
+            }
+
+            if (!task.synced.isNullOrEmpty()) {
+                _created = "Сохранено на сервере:               ${TimeUtils.formatDate(task.synced)}"
+            }
+
+
+            println("*** $_created | ${task.synced} ${task.localId}")
+
+
+            if (_created.isNotEmpty()) {
                 Text(
-                    text = "Создана: ${TimeUtils.formatDate(it)}",
+
+                    //text = "Создана: ${TimeUtils.formatDate(it)}",
+                    text = _created,
+
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray,
                     textAlign = TextAlign.Start
                 )
             }
 
-            Text(
-                text = "Обновлена: ${TimeUtils.formatDate(task.updatedAt)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                textAlign = TextAlign.Start
-            )
+            if (task.updatedAt.isNotEmpty()) {
+                Text(
+                    //text = "Обновлена: ${TimeUtils.formatDate(task.updatedAt)}",
+                    text = "Время последнего изменения статуса: ${TimeUtils.formatDate(task.updatedAt)}",
+
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Start
+                )
+            }
+
         }
     }
 }
