@@ -8,9 +8,14 @@ data class Owner(
     @SerialName("contentType")
     val contentType: String = "Employee", // Всегда "Employee"
     @SerialName("id")
-    val id: String
-//    @SerialName("name")
-//    val name: String = "",
+    val id: String,
+    @SerialName("name")
+    val name: String = "",
+
+
+    @SerialName("avatar")
+    var avatar: Avatar? = null
+
 //    @SerialName("firstName")
 //    val firstName: String = "",
 //    @SerialName("middleName")
@@ -22,9 +27,12 @@ data class Owner(
 //    @SerialName("department")
 //    val department: Department? = null
 ) {
-//    // Дополнительный конструктор на 2 параметра
+    //    // Дополнительный конструктор на 2 параметра
 //    constructor(contentType_: String, id: String) : this(
 //        contentType = contentType_,
 //        id = id
 //    )
+
+    @SerialName("isOnline")
+    val isOnline: Boolean = false
 }

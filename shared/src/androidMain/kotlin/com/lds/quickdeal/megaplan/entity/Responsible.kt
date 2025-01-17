@@ -40,7 +40,11 @@ data class Responsible(
 //    @SerialName("department")
 //    val department: Department? = null
 ) {
-//    // Дополнительный конструктор на 2 параметра
+
+    @SerialName("isOnline")
+    val isOnline: Boolean = false
+
+    //    // Дополнительный конструктор на 2 параметра
 //    constructor(contentType_: String, id: String) : this(
 //        contentType = contentType_,
 //        id = id
@@ -49,26 +53,3 @@ data class Responsible(
     var avatar: Avatar? = null
 }
 
-@Serializable
-data class Avatar(
-    @SerialName("contentType")
-    val contentType: String,
-
-    @SerialName("id")
-    val id: String,
-
-    @SerialName("name")
-    val name: String,
-
-    @SerialName("extension")
-    val extension: String,
-
-    @SerialName("size")
-    val size: Long,
-
-    @SerialName("path")
-    val path: String,
-
-    @SerialName("thumbnail")
-    val thumbnail: String?
-) 

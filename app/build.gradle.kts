@@ -41,7 +41,7 @@ fun getConfigValue(key: String, defaultValue: String): String {
 
 val majorVersion = 1
 val minorVersion = 3
-val patchVersion = 36
+val patchVersion = 37
 //val versionSuffix = "beta.1"
 val versionSuffix = ""//"" для стабильной версии
 
@@ -144,8 +144,14 @@ android {
             versionNameSuffix = "-DEBUG"
             signingConfig = signingConfigs.getByName("config")
 
-
-
+            buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"$username\"")
+            buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"$password\"")
+        }
+        create("benchmark") {
+            initWith(buildTypes.getByName("release"))
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("config")
             buildConfigField("String", "ACTIVE_DIRECTORY_USERNAME", "\"$username\"")
             buildConfigField("String", "ACTIVE_DIRECTORY_PASSWORD", "\"$password\"")
         }

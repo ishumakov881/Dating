@@ -15,12 +15,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.CircularProgressIndicator
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Sort
+
 
 
 import androidx.compose.material3.AlertDialog
@@ -110,7 +111,7 @@ fun TaskListScreen(
 
                     //FILTER
                     IconButton(onClick = { showSortMenu = true }) {
-                        Icon(imageVector = Icons.Default.Sort, contentDescription = "Сортировать")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.Sort, contentDescription = "Сортировать")
                     }
                     DropdownMenu(
                         expanded = showSortMenu,

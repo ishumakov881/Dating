@@ -162,8 +162,8 @@ fun FormScreen(
 
     val currentTask by sharedViewModel.currentTask.observeAsState(
         UploaderTask(
-            -100L, "", "", false, TaskStatus.NONE, "", "", "",
-            "", "",null
+            -100L, null, null, "","", false, TaskStatus.NONE, "", "", "",
+            "",  "", ""
         )
     )
 
@@ -1016,7 +1016,7 @@ fun FormScreen(
                     } else {
                         Icon(Icons.Filled.Send, contentDescription = "Отправить")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Отправить")
+                        Text("Поставить задачу")
                     }
                 }
                 //END MAIN CONTAINER

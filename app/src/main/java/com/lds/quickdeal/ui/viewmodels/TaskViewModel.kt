@@ -278,7 +278,9 @@ class TaskViewModel
             megaplanId = "",
             responsibleId = "",
             localId = "",
-            synced = ""
+            synced = "",
+            owner = null,
+            responsible = null
         )
     }
 

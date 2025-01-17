@@ -254,7 +254,8 @@ data class TaskListItemResponse(
 //
 //    val templateUsersCount: Int? = null,
 //    val isTemplateOwnerCurrentUser: Boolean? = null,
-//    val owner: Employee,
+
+    val owner: Owner,//Employee
     val responsible: Responsible,
 //
 //

@@ -3,6 +3,8 @@ package com.lds.quickdeal.android.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.lds.quickdeal.megaplan.entity.Owner
+import com.lds.quickdeal.megaplan.entity.Responsible
 import com.lds.quickdeal.megaplan.entity.TaskStatus
 
 
@@ -11,6 +13,8 @@ data class UploaderTask(
 
     @PrimaryKey(autoGenerate = true) var _id: Long = 0,
 
+    @ColumnInfo(name = "responsible") val responsible: Responsible?,
+    @ColumnInfo(name = "owner") val owner: Owner?,
 
     @ColumnInfo(name = "name") var name: String,
     @ColumnInfo(name = "subject") var subject: String,

@@ -46,6 +46,8 @@ material = "1.12.0"
 lifecycleViewModel = "2.8.3"
 lifecycleViewModelCompose = "2.8.0"
 androidx-lifecycle = "2.6.2"
+uiautomator = "2.2.0"
+benchmarkMacroJunit4 = "1.2.0-beta01"
 
 [libraries]
 
@@ -91,6 +93,8 @@ material = { group = "com.google.android.material", name = "material", version.r
 
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+androidx-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacroJunit4" }
 
 
 [plugins]
@@ -107,3 +111,4 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-mu
 
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 google-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "googleFirebaseCrashlytics" }
+android-test = { id = "com.android.test", version.ref = "agp" }

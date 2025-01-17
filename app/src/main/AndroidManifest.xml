@@ -2,26 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-
-    <!--    External Features-->
+    <!-- External Features -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
-        tools:ignore="ScopedStorage" />
-
-<!--    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />-->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
-
-
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
+        tools:ignore="ScopedStorage" /> <!-- <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" /> -->
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
     <uses-permission
         android:name="android.permission.CAMERA"
         tools:ignore="PermissionImpliesUnsupportedChromeOsHardware" />
@@ -31,6 +23,17 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
 
     <application
         android:name=".MyApp"
@@ -46,6 +49,9 @@
         android:theme="@style/Theme.QuickDeal"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
 
         <activity
             android:name=".main.MainActivity"
@@ -61,7 +67,6 @@
             </intent-filter>
         </activity>
 
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -71,16 +76,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
     </application>
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.VIEW"/>
-            <data android:mimeType="*/*"/>
-        </intent>
-        <intent>
-            <action android:name="android.media.action.IMAGE_CAPTURE"/>
-        </intent>
-    </queries>
 
 </manifest>

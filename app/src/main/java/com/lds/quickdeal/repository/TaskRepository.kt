@@ -13,6 +13,7 @@ import com.lds.quickdeal.android.db.TaskDao
 import com.lds.quickdeal.android.entity.UploaderTask
 import com.lds.quickdeal.android.utils.TaskUtils.Companion.appendTaskRequest
 import com.lds.quickdeal.android.utils.TimeUtils
+import com.lds.quickdeal.android.utils.UIUtils
 import com.lds.quickdeal.android.utils.UriUtils
 import com.lds.quickdeal.megaplan.entity.Responsible
 import com.lds.quickdeal.megaplan.entity.TaskCreateResponse0
@@ -419,9 +420,13 @@ class TaskRepository @Inject constructor(
                         createdAt = taskResponse.createdAt() ?: createAtNow,
                         updatedAt = taskResponse.updatedAt() ?: createAtNow,
                         megaplanId = taskResponse.megaplanId
-                            ?: "" // предполагаем, что ID задачи приходит с сервера
-                        , responsibleId = responsibleId,
-                        localId = taskResponse.localId, synced = taskResponse.synced
+                            ?: "", // предполагаем, что ID задачи приходит с сервера
+                        responsibleId = responsibleId,
+                        localId = taskResponse.localId,
+                        synced = taskResponse.synced,
+
+                        owner = null,//Not used
+                        responsible = null, //Not used
                     )
 
                     if (BuildConfig.DEBUG) {
@@ -525,7 +530,10 @@ class TaskRepository @Inject constructor(
                                 synced = taskResponse.synced,
                                 megaplanId = taskResponse.megaplanId,
                                 status = taskResponse.status
-                            ), synced = taskResponse.synced
+                            ),
+                            synced = taskResponse.synced,
+                            owner = taskResponse.owner,
+                            responsible = taskResponse.responsible
                         )
 
                     }
@@ -584,20 +592,13 @@ class TaskRepository @Inject constructor(
                     .sortedBy { it.name }
                     .map {
 
-                        var tmp =
-                            it.avatar?.thumbnail?.replace("{width}", "100")
-                                ?.replace("{height}", "100")
-//                    var tmp =
-//                        it.avatar?.path
-
-                        //println("avatar: $tmp")
 
                         ResponsibleWrapper(
                             _id = 0, // Room сам сгенерирует ID
                             contentType = "Employee",
                             megaplanUserId = it.id,
                             description = it.name,
-                            avatar = if (tmp.isNullOrEmpty()) "" else Const.MEGAPLAN_URL + tmp,
+                            avatar = UIUtils.getAvatarUrl(it.avatar?.thumbnail?:""),
                             position = it.position
                         )
                     }
