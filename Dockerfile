@@ -9,4 +9,4 @@ COPY src/ .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:$PORT", "app:app"] 
+CMD exec gunicorn --bind 0.0.0.0:${PORT:-5000} app:app 
