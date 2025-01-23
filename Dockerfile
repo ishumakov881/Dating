@@ -9,4 +9,4 @@ COPY src/ .
 
 EXPOSE 5000
 
-CMD exec gunicorn --bind 0.0.0.0:${PORT:-5000} app:flask_app 
+CMD exec gunicorn --bind 0.0.0.0:${PORT:-5000} app:app 

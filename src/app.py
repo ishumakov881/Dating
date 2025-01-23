@@ -2,10 +2,12 @@ from flask import Flask, request, jsonify
 import os
 import random
 from dotenv import load_dotenv
+from bot import flask_app
 
 load_dotenv()
 
-app = Flask(__name__)
+# Это нужно для Gunicorn, чтобы найти Flask-приложение
+app = flask_app
 
 # Демо-база пользователей
 USERS = [
