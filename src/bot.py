@@ -9,6 +9,7 @@ from telegram.ext import (
     MessageHandler, 
     filters
 )
+from flask import Flask, request
 from faker import Faker
 from dotenv import load_dotenv
 
@@ -32,10 +33,44 @@ fake = Faker('ru_RU')
 user_profiles = {}
 matches = {}
 
+# Flask для webhook
+flask_app = Flask(__name__)
+
 class DatingBot:
     def __init__(self, token):
         self.token = token
         self.application = Application.builder().token(token).build()
+
+    async def set_webhook(self):
+        """Установка webhook"""
+        webhook_url = os.getenv('WEBHOOK_URL', 'https://dating-production.up.railway.app')
+        full_webhook_url = f"{webhook_url}/{self.token}"
+        
+        logger.info(f"Устанавливаю webhook: {full_webhook_url}")
+        await self.application.bot.set_webhook(
+            url=full_webhook_url,
+            allowed_updates=Update.ALL_TYPES
+        )
+        logger.info("Webhook установлен успешно")
+
+    def run_webhook(self):
+        """Запуск бота через webhook"""
+        conv_handler = ConversationHandler(
+            entry_points=[CommandHandler('start', self.start)],
+            states={
+                NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_name)],
+                AGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_age)],
+                GENDER: [MessageHandler(filters.Regex('^(Мужской|Женский)$'), self.save_gender)],
+                CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_city)],
+                PHOTO: [MessageHandler(filters.PHOTO, self.save_photo)]
+            },
+            fallbacks=[CommandHandler('cancel', lambda u, c: ConversationHandler.END)]
+        )
+
+        self.application.add_handler(conv_handler)
+        self.application.add_handler(CommandHandler('match', self.generate_match))
+
+        return self.application
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         """Начало регистрации"""
@@ -132,24 +167,20 @@ class DatingBot:
         else:
             await update.message.reply_text("Пока нет подходящих анкет. Попробуй позже!")
 
-    def run(self):
-        """Запуск бота"""
-        conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('start', self.start)],
-            states={
-                NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_name)],
-                AGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_age)],
-                GENDER: [MessageHandler(filters.Regex('^(Мужской|Женский)$'), self.save_gender)],
-                CITY: [MessageHandler(filters.TEXT & ~filters.COMMAND, self.save_city)],
-                PHOTO: [MessageHandler(filters.PHOTO, self.save_photo)]
-            },
-            fallbacks=[CommandHandler('cancel', lambda u, c: ConversationHandler.END)]
-        )
+# Flask route для webhook
+@flask_app.route(f'/{os.getenv("TELEGRAM_BOT_TOKEN")}', methods=['POST'])
+async def webhook():
+    """Обработчик webhook"""
+    bot_instance = DatingBot(os.getenv('TELEGRAM_BOT_TOKEN'))
+    bot_app = bot_instance.run_webhook()
+    
+    update = Update.de_json(request.get_json(force=True), bot_app.bot)
+    await bot_app.process_update(update)
+    return 'OK'
 
-        self.application.add_handler(conv_handler)
-        self.application.add_handler(CommandHandler('match', self.generate_match))
-
-        self.application.run_polling(allowed_updates=Update.ALL_TYPES)
+@flask_app.route('/', methods=['GET'])
+def home():
+    return "💘 LoveSwipe Telegram Bot 💘"
 
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -158,7 +189,10 @@ def main():
         return
     
     bot = DatingBot(token)
-    bot.run()
+    
+    # Установка webhook при старте
+    import asyncio
+    asyncio.run(bot.set_webhook())
 
 if __name__ == '__main__':
-    main() 
+    flask_app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 
